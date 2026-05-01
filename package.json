@@ -1,0 +1,30 @@
+{
+  "name": "routeiq",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@10.33.2",
+  "workspaces": [
+    "packages/*",
+    "server",
+    "web"
+  ],
+  "scripts": {
+    "build": "pnpm --filter @routeiq/contracts build && pnpm --filter @routeiq/web build && pnpm --filter @routeiq/server build",
+    "dev": "pnpm --filter @routeiq/contracts build && pnpm --parallel --filter @routeiq/server --filter @routeiq/web dev",
+    "lint": "pnpm --filter @routeiq/contracts lint && pnpm --filter @routeiq/web lint && pnpm --filter @routeiq/server lint",
+    "start": "pnpm --filter @routeiq/server start",
+    "test": "pnpm --filter @routeiq/contracts build && pnpm --filter @routeiq/server test",
+    "typecheck": "pnpm --filter @routeiq/contracts typecheck && pnpm --filter @routeiq/web typecheck && pnpm --filter @routeiq/server typecheck",
+    "add": "pnpm --filter @routeiq/web run add"
+  },
+  "devDependencies": {
+    "@chainlift/liftkit": "^0.2.0",
+    "@eslint/js": "^9.39.1",
+    "@types/node": "^24.10.1",
+    "eslint": "^9.39.1",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.46.4",
+    "vitest": "^4.0.14"
+  }
+}
