@@ -1031,7 +1031,10 @@ select:disabled {
 }
 
 .result-dashboard--comparison {
-  grid-template-columns: minmax(300px, 420px) minmax(0, 1fr);
+  grid-template-columns:
+    minmax(380px, 1fr)
+    10px
+    minmax(420px, min(var(--routeiq-map-column, 62%), 100%));
   min-height: calc(100vh - 112px);
 }
 
@@ -1150,6 +1153,41 @@ select:disabled {
   background: var(--routeiq-panel);
 }
 
+.result-dashboard__resize {
+  align-self: stretch;
+  width: 10px;
+  min-width: 10px;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  cursor: col-resize;
+  touch-action: none;
+}
+
+.result-dashboard__resize::before {
+  display: block;
+  width: 3px;
+  height: 100%;
+  margin: 0 auto;
+  background: color-mix(in srgb, var(--routeiq-border-strong) 70%, transparent);
+  border-radius: 999px;
+  content: "";
+  transition:
+    background-color 140ms ease,
+    width 140ms ease;
+}
+
+.result-dashboard__resize:hover::before,
+.result-dashboard__resize:focus-visible::before {
+  width: 5px;
+  background: var(--routeiq-primary);
+}
+
+.result-dashboard__resize:focus-visible {
+  outline: none;
+  box-shadow: var(--routeiq-shadow-control);
+}
+
 .error-banner {
   margin-bottom: var(--routeiq-space-xs);
   color: var(--lk-onerrorcontainer, #400012);
@@ -1201,6 +1239,10 @@ select:disabled {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--routeiq-space-sm);
+}
+
+.summary-stack .route-grid {
+  grid-template-columns: 1fr;
 }
 
 .route-option-grid {
@@ -1543,6 +1585,10 @@ select:disabled {
   .result-pane__sidebar-open {
     width: auto;
     max-width: 100%;
+  }
+
+  .result-dashboard__resize {
+    display: none;
   }
 }
 

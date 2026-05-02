@@ -1,4 +1,4 @@
-import { AlertTriangle, Database } from "lucide-react";
+import { AlertTriangle } from "lucide-react";
 import {
   formatYen,
   formatDistanceKm,
@@ -71,6 +71,8 @@ function RouteOption({
 }
 
 export function RouteSummary({ result }: RouteSummaryProps) {
+  const hasApiFailures = result.apiFailures.length > 0;
+
   return (
     <div className="summary-stack">
       <section className="recommendation-band">
@@ -136,23 +138,15 @@ export function RouteSummary({ result }: RouteSummaryProps) {
               recommended={result.recommendedRoute === "local"}
             />
           </div>
-          <div className="list-grid">
-            <ListBlock
-              title="注意事項"
-              items={result.warnings}
-              icon={<AlertTriangle size={16} aria-hidden="true" />}
-            />
-            <ListBlock
-              title="データ取得元"
-              items={result.dataSources}
-              icon={<Database size={16} aria-hidden="true" />}
-            />
-            <ListBlock
-              title="API取得に失敗した項目"
-              items={result.apiFailures}
-              icon={<AlertTriangle size={16} aria-hidden="true" />}
-            />
-          </div>
+          {hasApiFailures ? (
+            <div className="list-grid">
+              <ListBlock
+                title="API取得に失敗した項目"
+                items={result.apiFailures}
+                icon={<AlertTriangle size={16} aria-hidden="true" />}
+              />
+            </div>
+          ) : null}
         </div>
       </details>
     </div>

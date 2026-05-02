@@ -1,5 +1,12 @@
 import { History, Menu, X } from "lucide-react";
-import { useCallback, useState } from "react";
+import {
+  useCallback,
+  useRef,
+  useState,
+  type CSSProperties,
+  type KeyboardEvent,
+  type PointerEvent
+} from "react";
 import type { RouteAnalysisRequest } from "../../../entities/route/model";
 import { RouteForm } from "../../../features/route-form/ui";
 import { LoadingSpinner } from "../../../shared/ui";
@@ -19,6 +26,9 @@ function formatMessage(text: string) {
 
 const HISTORY_STORAGE_KEY = "routeiq-route-history";
 const HISTORY_LIMIT = 10;
+const DEFAULT_MAP_WIDTH_PERCENT = 62;
+const MIN_MAP_WIDTH_PERCENT = 44;
+const MAX_MAP_WIDTH_PERCENT = 74;
 
 type RouteHistoryEntry = {
   id: string;
@@ -107,6 +117,10 @@ function formatHistoryDate(value: string) {
   }).format(date);
 }
 
+function clampMapWidthPercent(value: number) {
+  return Math.min(MAX_MAP_WIDTH_PERCENT, Math.max(MIN_MAP_WIDTH_PERCENT, value));
+}
+
 type RouteComparisonPageProps = {
   isDarkMode: boolean;
   onToggleTheme: () => void;
@@ -165,6 +179,9 @@ export function RouteComparisonPage({ isDarkMode, onToggleTheme }: RouteComparis
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [selectedFormDraft, setSelectedFormDraft] = useState<RouteAnalysisRequest | null>(null);
   const [routeHistory, setRouteHistory] = useState<RouteHistoryEntry[]>(loadRouteHistory);
+  const [mapWidthPercent, setMapWidthPercent] = useState(DEFAULT_MAP_WIDTH_PERCENT);
+  const dashboardRef = useRef<HTMLDivElement | null>(null);
+  const isResizingMap = useRef(false);
 
   const handleSubmit = useCallback(
     async (input: RouteAnalysisRequest) => {
@@ -182,6 +199,63 @@ export function RouteComparisonPage({ isDarkMode, onToggleTheme }: RouteComparis
 
   const restoreHistory = useCallback((input: RouteAnalysisRequest) => {
     setSelectedFormDraft({ ...input });
+  }, []);
+
+  const updateMapWidth = useCallback((clientX: number) => {
+    const dashboard = dashboardRef.current;
+    if (!dashboard) return;
+
+    const rect = dashboard.getBoundingClientRect();
+    if (rect.width <= 0) return;
+
+    const nextMapWidth = ((rect.right - clientX) / rect.width) * 100;
+    setMapWidthPercent(clampMapWidthPercent(nextMapWidth));
+  }, []);
+
+  const handleResizePointerDown = useCallback(
+    (event: PointerEvent<HTMLButtonElement>) => {
+      isResizingMap.current = true;
+      event.currentTarget.setPointerCapture(event.pointerId);
+      updateMapWidth(event.clientX);
+    },
+    [updateMapWidth]
+  );
+
+  const handleResizePointerMove = useCallback(
+    (event: PointerEvent<HTMLButtonElement>) => {
+      if (!isResizingMap.current) return;
+      updateMapWidth(event.clientX);
+    },
+    [updateMapWidth]
+  );
+
+  const handleResizePointerEnd = useCallback((event: PointerEvent<HTMLButtonElement>) => {
+    isResizingMap.current = false;
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+  }, []);
+
+  const handleResizeKeyDown = useCallback((event: KeyboardEvent<HTMLButtonElement>) => {
+    if (event.key === "ArrowLeft") {
+      event.preventDefault();
+      setMapWidthPercent((current) => clampMapWidthPercent(current + 2));
+    }
+
+    if (event.key === "ArrowRight") {
+      event.preventDefault();
+      setMapWidthPercent((current) => clampMapWidthPercent(current - 2));
+    }
+
+    if (event.key === "Home") {
+      event.preventDefault();
+      setMapWidthPercent(MIN_MAP_WIDTH_PERCENT);
+    }
+
+    if (event.key === "End") {
+      event.preventDefault();
+      setMapWidthPercent(MAX_MAP_WIDTH_PERCENT);
+    }
   }, []);
 
   return (
@@ -233,8 +307,29 @@ export function RouteComparisonPage({ isDarkMode, onToggleTheme }: RouteComparis
           {error ? <div className="error-banner">{error}</div> : null}
           {analysis ? (
             analysis.routeComparison ? (
-              <div className="result-dashboard result-dashboard--comparison">
+              <div
+                ref={dashboardRef}
+                className="result-dashboard result-dashboard--comparison"
+                style={{ "--routeiq-map-column": `${mapWidthPercent}%` } as CSSProperties}
+              >
                 <RouteSummary result={analysis.routeComparison} />
+                <button
+                  type="button"
+                  className="result-dashboard__resize"
+                  aria-label="Google マップの横幅を調整"
+                  aria-orientation="vertical"
+                  aria-valuemin={MIN_MAP_WIDTH_PERCENT}
+                  aria-valuemax={MAX_MAP_WIDTH_PERCENT}
+                  aria-valuenow={Math.round(mapWidthPercent)}
+                  role="separator"
+                  title="Google マップの横幅を調整"
+                  onDoubleClick={() => setMapWidthPercent(DEFAULT_MAP_WIDTH_PERCENT)}
+                  onKeyDown={handleResizeKeyDown}
+                  onPointerCancel={handleResizePointerEnd}
+                  onPointerDown={handleResizePointerDown}
+                  onPointerMove={handleResizePointerMove}
+                  onPointerUp={handleResizePointerEnd}
+                />
                 <GoogleRouteMap input={analysis.input} />
               </div>
             ) : (
