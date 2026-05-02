@@ -13,6 +13,10 @@ export type RouteProviderName = "mock" | "google";
 
 export interface AppConfig {
   port: number;
+  allowedOrigins: string[];
+  routeAnalysisRateLimitMaxRequests: number;
+  routeAnalysisRateLimitWindowMs: number;
+  maxJsonBodyBytes: number;
   routeProvider: RouteProviderName;
   googleMapsApiKey?: string;
   googleMapsBrowserApiKey?: string;
@@ -30,6 +34,31 @@ function optionalNumber(value: string | undefined): number | undefined {
   return parsed;
 }
 
+function optionalPositiveNumber(value: string | undefined, fallback: number): number {
+  const parsed = optionalNumber(value);
+  if (parsed === undefined) return fallback;
+  if (parsed <= 0) {
+    throw new Error(`Expected a positive environment value, received "${value}".`);
+  }
+  return parsed;
+}
+
+function parseAllowedOrigins(value: string | undefined, port: number): string[] {
+  const localOrigins = [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    `http://localhost:${port}`,
+    `http://127.0.0.1:${port}`
+  ];
+  const configuredOrigins =
+    value
+      ?.split(",")
+      .map((origin) => origin.trim())
+      .filter(Boolean) ?? [];
+
+  return [...new Set([...localOrigins, ...configuredOrigins])];
+}
+
 const optionalTrimmedString = z
   .string()
   .optional()
@@ -41,6 +70,10 @@ const optionalTrimmedString = z
 const envSchema = z
   .object({
     PORT: z.string().optional(),
+    ROUTEIQ_ALLOWED_ORIGINS: z.string().optional(),
+    ROUTEIQ_RATE_LIMIT_MAX_REQUESTS: z.string().optional(),
+    ROUTEIQ_RATE_LIMIT_WINDOW_MS: z.string().optional(),
+    ROUTEIQ_MAX_JSON_BODY_BYTES: z.string().optional(),
     ROUTE_PROVIDER: z.enum(["mock", "google"]).optional().default("mock"),
     GOOGLE_MAPS_API_KEY: optionalTrimmedString,
     GOOGLE_MAPS_BROWSER_API_KEY: optionalTrimmedString,
@@ -53,8 +86,19 @@ const envSchema = z
 
 export function getAppConfig(): AppConfig {
   const env = envSchema.parse(process.env);
+  const port = optionalNumber(env.PORT) ?? 8787;
   return {
-    port: optionalNumber(env.PORT) ?? 8787,
+    port,
+    allowedOrigins: parseAllowedOrigins(env.ROUTEIQ_ALLOWED_ORIGINS, port),
+    routeAnalysisRateLimitMaxRequests: optionalPositiveNumber(
+      env.ROUTEIQ_RATE_LIMIT_MAX_REQUESTS,
+      60
+    ),
+    routeAnalysisRateLimitWindowMs: optionalPositiveNumber(
+      env.ROUTEIQ_RATE_LIMIT_WINDOW_MS,
+      60_000
+    ),
+    maxJsonBodyBytes: optionalPositiveNumber(env.ROUTEIQ_MAX_JSON_BODY_BYTES, 16_384),
     routeProvider: env.ROUTE_PROVIDER,
     googleMapsApiKey: env.GOOGLE_MAPS_API_KEY,
     googleMapsBrowserApiKey: env.GOOGLE_MAPS_BROWSER_API_KEY ?? env.GOOGLE_MAPS_EMBED_API_KEY,

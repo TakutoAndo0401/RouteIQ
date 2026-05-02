@@ -111,23 +111,35 @@ RouteIQ は pnpm workspace で構成しています。
 
 1. Google Cloud で Routes API を有効にし、`GOOGLE_MAPS_API_KEY` を設定します。
 2. 画面内に Google マップの経路を埋め込み、フォームで地図選択を使う場合は、Maps Embed API、Maps JavaScript API、Geocoding API を有効にし、`GOOGLE_MAPS_BROWSER_API_KEY` を設定します。地図選択の Google Maps JavaScript API は、ユーザーが「地図」を押した場合だけ読み込まれます。
-3. 経路比較も行う場合は、`ROUTE_PROVIDER=google` を設定します。
-4. アプリをビルドします。
+3. 公開ドメインを `ROUTEIQ_ALLOWED_ORIGINS` に設定します。複数ある場合は comma 区切りにします。
+4. 経路比較も行う場合は、`ROUTE_PROVIDER=google` を設定します。`GOOGLE_MAPS_API_KEY` が未設定の場合、server は mock に切り替えずエラーにします。
+5. アプリをビルドします。
 
 ```sh
 pnpm install --frozen-lockfile
 pnpm build
 ```
 
-5. サーバーを起動します。
+6. サーバーを起動します。
 
 ```sh
 pnpm start
 ```
 
-6. reverse proxy などで HTTPS 公開します。
+7. reverse proxy などで HTTPS 公開します。
 
 現在のサーバーは `127.0.0.1` で listen します。VPS などで運用する場合は、同一ホスト上の nginx / Caddy などから `127.0.0.1:8787` に転送する構成が適しています。
+
+公開運用では、RouteIQ server 側の制限だけでなく、reverse proxy 側でも request body size、rate limit、HTTPS、アクセスログを設定してください。`/api/route-analysis` は Google Routes API の利用量に直結するため、Google Cloud 側の quota / budget alert も必ず設定します。
+
+Google Maps API key は、server 用と browser 用で分けて制限します。
+
+| Key | 用途 | Google Cloud の Application restriction | Google Cloud の API restriction |
+| --- | --- | --- | --- |
+| `GOOGLE_MAPS_API_KEY` | RouteIQ server から Google Routes API を呼び出す | `IP addresses`。server の outbound IP を指定します。 | `Routes API` のみに限定します。 |
+| `GOOGLE_MAPS_BROWSER_API_KEY` | browser で地図埋め込み、地図選択、住所検索を使う | `Websites`。例: `https://routeiq.example.com/*`。staging がある場合は staging の URL も追加します。 | `Maps Embed API`、`Maps JavaScript API`、`Geocoding API` のみに限定します。 |
+
+`GOOGLE_MAPS_API_KEY` は server から使う Web Service API 用の key なので、`Websites` 制限ではなく `IP addresses` 制限を使います。固定 outbound IP を持たない hosting 環境では IP 制限が難しいため、Google Cloud 側の quota / budget alert と、RouteIQ server / reverse proxy 側の rate limit を必ず併用します。
 
 ## 設定
 
@@ -136,9 +148,13 @@ pnpm start
 | Variable | Description |
 | --- | --- |
 | `PORT` | server の port。デフォルトは `8787` です。 |
+| `ROUTEIQ_ALLOWED_ORIGINS` | browser からの API 呼び出しを許可する origin。例: `https://routeiq.example.com`。複数指定する場合は comma 区切りです。localhost / 127.0.0.1 の開発用 origin は常に許可されます。 |
+| `ROUTEIQ_RATE_LIMIT_MAX_REQUESTS` | `/api/route-analysis` の client 単位 rate limit 回数。デフォルトは `60` です。 |
+| `ROUTEIQ_RATE_LIMIT_WINDOW_MS` | `/api/route-analysis` の rate limit window。デフォルトは `60000` ms です。 |
+| `ROUTEIQ_MAX_JSON_BODY_BYTES` | JSON request body の最大 byte 数。デフォルトは `16384` です。 |
 | `ROUTE_PROVIDER` | 経路比較 provider。`google` を使う場合のみ実経路比較します。`mock` は本番回答では使いません。 |
-| `GOOGLE_MAPS_API_KEY` | server 用 Google Maps API key。Google Routes API の実経路比較に使います。IP アドレス制限と API 制限を設定してください。 |
-| `GOOGLE_MAPS_BROWSER_API_KEY` | browser 用 Google Maps API key。画面内の Google マップ経路 iframe と、フォームの地図選択に使います。HTTP referrer 制限を設定し、Maps Embed API、Maps JavaScript API、Geocoding API にだけ API 制限してください。 |
+| `GOOGLE_MAPS_API_KEY` | server 用 Google Maps API key。Google Routes API の実経路比較に使います。Google Cloud の Application restriction は `IP addresses`、API restriction は `Routes API` のみにします。 |
+| `GOOGLE_MAPS_BROWSER_API_KEY` | browser 用 Google Maps API key。画面内の Google マップ経路 iframe と、フォームの地図選択に使います。Google Cloud の Application restriction は `Websites`、API restriction は `Maps Embed API`、`Maps JavaScript API`、`Geocoding API` のみにします。 |
 | `GOOGLE_MAPS_EMBED_API_KEY` | 旧 browser 用 key 名。`GOOGLE_MAPS_BROWSER_API_KEY` が未設定の場合だけ互換用に使われます。新規設定では使わないでください。 |
 | `DEFAULT_FUEL_PRICE_YEN_PER_LITER` | ユーザーが燃料価格を指定しない場合に使う 1L あたりの燃料価格。 |
 | `GOOGLE_MAPS_REGION_CODE` | Google Routes API に渡す region hint。デフォルトは `JP` です。 |

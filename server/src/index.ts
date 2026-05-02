@@ -1,42 +1,18 @@
 import { createServer } from "node:http";
-import type { IncomingMessage } from "node:http";
 import type { ServerResponse } from "node:http";
 import { getAppConfig } from "./config/env.js";
 import { analyzeRouteChat } from "./chat/routeChat.js";
 import { fetchFuelPriceAverages } from "./fuelPrices.js";
 import { createRouteProvider } from "./providers/providerFactory.js";
+import {
+  HttpRequestError,
+  createRateLimiter,
+  getClientRateLimitKey,
+  isAllowedOrigin,
+  readJsonBody,
+  setCorsHeaders
+} from "./http/security.js";
 import { readWebHtml } from "./web/readWebHtml.js";
-
-function isAllowedOrigin(origin: string | undefined): boolean {
-  if (!origin) return true;
-  try {
-    const url = new URL(origin);
-    return (
-      url.hostname === "localhost" ||
-      url.hostname === "127.0.0.1"
-    );
-  } catch {
-    return false;
-  }
-}
-
-function setCorsHeaders(res: ServerResponse): void {
-  res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Methods", "POST, GET, OPTIONS");
-  res.setHeader(
-    "Access-Control-Allow-Headers",
-    "content-type, authorization"
-  );
-}
-
-async function readJsonBody(req: IncomingMessage): Promise<unknown> {
-  const chunks: Buffer[] = [];
-  for await (const chunk of req) {
-    chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
-  }
-  if (chunks.length === 0) return {};
-  return JSON.parse(Buffer.concat(chunks).toString("utf8")) as unknown;
-}
 
 function writeJson(res: ServerResponse, status: number, payload: unknown): void {
   res
@@ -48,6 +24,11 @@ function writeJson(res: ServerResponse, status: number, payload: unknown): void 
 }
 
 const config = getAppConfig();
+const routeAnalysisRateLimit = createRateLimiter({
+  maxRequests: config.routeAnalysisRateLimitMaxRequests,
+  windowMs: config.routeAnalysisRateLimitWindowMs
+});
+
 const httpServer = createServer(async (req, res) => {
   if (!req.url) {
     res.writeHead(400).end("Missing URL");
@@ -55,14 +36,14 @@ const httpServer = createServer(async (req, res) => {
   }
 
   const origin = req.headers.origin;
-  if (!isAllowedOrigin(origin)) {
+  if (!isAllowedOrigin(origin, config.allowedOrigins)) {
     res.writeHead(403).end("Forbidden origin");
     return;
   }
 
   const url = new URL(req.url, `http://${req.headers.host ?? "localhost"}`);
   if (req.method === "OPTIONS" && url.pathname.startsWith("/api/")) {
-    setCorsHeaders(res);
+    setCorsHeaders(res, origin, config.allowedOrigins);
     res.writeHead(204).end();
     return;
   }
@@ -78,7 +59,7 @@ const httpServer = createServer(async (req, res) => {
   }
 
   if (req.method === "GET" && url.pathname === "/api/fuel-prices") {
-    setCorsHeaders(res);
+    setCorsHeaders(res, origin, config.allowedOrigins);
     try {
       writeJson(res, 200, await fetchFuelPriceAverages());
     } catch (error) {
@@ -90,7 +71,7 @@ const httpServer = createServer(async (req, res) => {
   }
 
   if (req.method === "GET" && url.pathname === "/api/client-config") {
-    setCorsHeaders(res);
+    setCorsHeaders(res, origin, config.allowedOrigins);
     writeJson(res, 200, {
       googleMapsBrowserApiKey: config.googleMapsBrowserApiKey ?? null
     });
@@ -98,9 +79,14 @@ const httpServer = createServer(async (req, res) => {
   }
 
   if (req.method === "POST" && url.pathname === "/api/route-analysis") {
-    setCorsHeaders(res);
+    setCorsHeaders(res, origin, config.allowedOrigins);
     try {
-      const body = await readJsonBody(req);
+      if (!routeAnalysisRateLimit(getClientRateLimitKey(req))) {
+        writeJson(res, 429, { error: "Too many route analysis requests. Please retry later." });
+        return;
+      }
+
+      const body = await readJsonBody(req, config.maxJsonBodyBytes);
       const { provider, warnings } = createRouteProvider(config);
       const result = await analyzeRouteChat(body, {
         config,
@@ -109,6 +95,10 @@ const httpServer = createServer(async (req, res) => {
       });
       writeJson(res, 200, result);
     } catch (error) {
+      if (error instanceof HttpRequestError) {
+        writeJson(res, error.status, { error: error.message });
+        return;
+      }
       const message = error instanceof Error ? error.message : "Route analysis failed.";
       writeJson(res, 400, { error: message });
     }

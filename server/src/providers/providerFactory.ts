@@ -19,12 +19,7 @@ export function createRouteProvider(config: AppConfig): {
       };
     }
 
-    return {
-      provider: new MockRouteProvider(),
-      warnings: [
-        "ROUTE_PROVIDER=google ですが GOOGLE_MAPS_API_KEY が未設定のため mock provider に切り替えました。"
-      ]
-    };
+    throw new Error("ROUTE_PROVIDER=google requires GOOGLE_MAPS_API_KEY.");
   }
 
   return {
