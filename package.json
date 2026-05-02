@@ -11,6 +11,7 @@
   ],
   "scripts": {
     "build": "pnpm --filter @routeiq/contracts build && pnpm --filter @routeiq/web build && pnpm --filter @routeiq/server build",
+    "build:cloudflare": "pnpm build",
     "dev": "pnpm --filter @routeiq/contracts build && pnpm --parallel --filter @routeiq/server --filter @routeiq/web dev",
     "lint": "pnpm --filter @routeiq/contracts lint && pnpm --filter @routeiq/web lint && pnpm --filter @routeiq/server lint",
     "start": "pnpm --filter @routeiq/server start",

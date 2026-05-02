@@ -1,33 +1,16 @@
 import { createServer } from "node:http";
-import type { ServerResponse } from "node:http";
 import { getAppConfig } from "./config/env.js";
-import { analyzeRouteChat } from "./chat/routeChat.js";
-import { fetchFuelPriceAverages } from "./fuelPrices.js";
-import { createRouteProvider } from "./providers/providerFactory.js";
+import { loadLocalDotEnv } from "./config/loadDotEnv.js";
 import {
-  HttpRequestError,
-  createRateLimiter,
   getClientRateLimitKey,
-  isAllowedOrigin,
-  readJsonBody,
-  setCorsHeaders
+  readJsonBody
 } from "./http/security.js";
+import { createRouteIqApiHandler } from "./http/routeIqApi.js";
 import { readWebHtml } from "./web/readWebHtml.js";
 
-function writeJson(res: ServerResponse, status: number, payload: unknown): void {
-  res
-    .writeHead(status, {
-      "content-type": "application/json; charset=utf-8",
-      "cache-control": "no-store"
-    })
-    .end(JSON.stringify(payload));
-}
-
+loadLocalDotEnv();
 const config = getAppConfig();
-const routeAnalysisRateLimit = createRateLimiter({
-  maxRequests: config.routeAnalysisRateLimitMaxRequests,
-  windowMs: config.routeAnalysisRateLimitWindowMs
-});
+const handleApiRequest = createRouteIqApiHandler(config);
 
 const httpServer = createServer(async (req, res) => {
   if (!req.url) {
@@ -35,18 +18,7 @@ const httpServer = createServer(async (req, res) => {
     return;
   }
 
-  const origin = req.headers.origin;
-  if (!isAllowedOrigin(origin, config.allowedOrigins)) {
-    res.writeHead(403).end("Forbidden origin");
-    return;
-  }
-
   const url = new URL(req.url, `http://${req.headers.host ?? "localhost"}`);
-  if (req.method === "OPTIONS" && url.pathname.startsWith("/api/")) {
-    setCorsHeaders(res, origin, config.allowedOrigins);
-    res.writeHead(204).end();
-    return;
-  }
 
   if (req.method === "GET" && (url.pathname === "/" || url.pathname === "/preview")) {
     res
@@ -58,50 +30,16 @@ const httpServer = createServer(async (req, res) => {
     return;
   }
 
-  if (req.method === "GET" && url.pathname === "/api/fuel-prices") {
-    setCorsHeaders(res, origin, config.allowedOrigins);
-    try {
-      writeJson(res, 200, await fetchFuelPriceAverages());
-    } catch (error) {
-      const message =
-        error instanceof Error ? error.message : "Fuel price request failed.";
-      writeJson(res, 502, { error: message });
-    }
-    return;
-  }
-
-  if (req.method === "GET" && url.pathname === "/api/client-config") {
-    setCorsHeaders(res, origin, config.allowedOrigins);
-    writeJson(res, 200, {
-      googleMapsBrowserApiKey: config.googleMapsBrowserApiKey ?? null
+  if (url.pathname.startsWith("/api/")) {
+    const response = await handleApiRequest({
+      method: req.method ?? "GET",
+      path: url.pathname,
+      origin: req.headers.origin,
+      clientKey: getClientRateLimitKey(req),
+      readBody: (maxBytes) => readJsonBody(req, maxBytes)
     });
-    return;
-  }
-
-  if (req.method === "POST" && url.pathname === "/api/route-analysis") {
-    setCorsHeaders(res, origin, config.allowedOrigins);
-    try {
-      if (!routeAnalysisRateLimit(getClientRateLimitKey(req))) {
-        writeJson(res, 429, { error: "Too many route analysis requests. Please retry later." });
-        return;
-      }
-
-      const body = await readJsonBody(req, config.maxJsonBodyBytes);
-      const { provider, warnings } = createRouteProvider(config);
-      const result = await analyzeRouteChat(body, {
-        config,
-        provider,
-        providerWarnings: warnings
-      });
-      writeJson(res, 200, result);
-    } catch (error) {
-      if (error instanceof HttpRequestError) {
-        writeJson(res, error.status, { error: error.message });
-        return;
-      }
-      const message = error instanceof Error ? error.message : "Route analysis failed.";
-      writeJson(res, 400, { error: message });
-    }
+    res.writeHead(response.status, Object.fromEntries(response.headers.entries()));
+    res.end(await response.text());
     return;
   }
 

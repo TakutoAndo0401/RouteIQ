@@ -1,13 +1,4 @@
-import { existsSync } from "node:fs";
-import { resolve } from "node:path";
-import { config as loadDotEnv } from "dotenv";
 import { z } from "zod/v4";
-
-for (const path of [resolve(process.cwd(), ".env"), resolve(process.cwd(), "../.env")]) {
-  if (existsSync(path)) {
-    loadDotEnv({ path, override: false });
-  }
-}
 
 export type RouteProviderName = "mock" | "google";
 
@@ -84,8 +75,8 @@ const envSchema = z
   })
   .passthrough();
 
-export function getAppConfig(): AppConfig {
-  const env = envSchema.parse(process.env);
+export function getAppConfigFromEnv(source: Record<string, string | undefined>): AppConfig {
+  const env = envSchema.parse(source);
   const port = optionalNumber(env.PORT) ?? 8787;
   return {
     port,
@@ -106,4 +97,8 @@ export function getAppConfig(): AppConfig {
     googleMapsRegionCode: env.GOOGLE_MAPS_REGION_CODE,
     googleMapsLanguageCode: env.GOOGLE_MAPS_LANGUAGE_CODE
   };
+}
+
+export function getAppConfig(): AppConfig {
+  return getAppConfigFromEnv(process.env);
 }
