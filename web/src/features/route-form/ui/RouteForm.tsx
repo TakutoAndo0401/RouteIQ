@@ -13,6 +13,7 @@ import { LocationPickerMap } from "./LocationPickerMap";
 
 interface RouteFormProps {
   disabled?: boolean;
+  initialValues?: RouteAnalysisRequest | null;
   onSubmit: (input: RouteAnalysisRequest) => void;
 }
 
@@ -24,7 +25,7 @@ type MapPickerTarget = "origin" | "destination";
 const VEHICLE_TYPES = ["普通車", "軽自動車", "中型車", "大型車"] as const;
 const DEFAULT_QUESTION = "現在の道路状況を確認して";
 
-export function RouteForm({ disabled = false, onSubmit }: RouteFormProps) {
+export function RouteForm({ disabled = false, initialValues = null, onSubmit }: RouteFormProps) {
   const [origin, setOrigin] = useState("");
   const [destination, setDestination] = useState("");
   const [fuelEfficiency, setFuelEfficiency] = useState("15");
@@ -43,6 +44,22 @@ export function RouteForm({ disabled = false, onSubmit }: RouteFormProps) {
     ]
       .filter(Boolean)
       .join(" ") || undefined;
+
+  useEffect(() => {
+    if (!initialValues) return;
+
+    setOrigin(initialValues.origin);
+    setDestination(initialValues.destination);
+    setFuelEfficiency(String(initialValues.fuelEfficiencyKmPerLiter));
+    setFuelPrice(
+      typeof initialValues.fuelPriceYenPerLiter === "number"
+        ? String(initialValues.fuelPriceYenPerLiter)
+        : ""
+    );
+    setVehicleType(initialValues.vehicleType ?? "普通車");
+    setErrors({});
+  }, [initialValues]);
+
   const updateOrigin = (value: string) => {
     setOrigin(value);
     if (errors.origin || errors.currentLocation) {
@@ -67,7 +84,7 @@ export function RouteForm({ disabled = false, onSubmit }: RouteFormProps) {
     if (!navigator.geolocation) {
       setErrors((current) => ({
         ...current,
-          currentLocation: "現在地を取得できません。ブラウザの位置情報許可を確認してください。"
+        currentLocation: "現在地を取得できません。ブラウザの位置情報許可を確認してください。"
       }));
       return;
     }
@@ -179,38 +196,42 @@ export function RouteForm({ disabled = false, onSubmit }: RouteFormProps) {
         <div className="form-field form-field--location">
           <span id="origin-label">出発地</span>
           <div className="input-shell input-shell--location">
-            <MapPin size={16} aria-hidden="true" />
-            <input
-              value={origin}
-              onChange={(event) => updateOrigin(event.target.value)}
-              placeholder="用賀IC"
-              disabled={disabled}
-              required
-              aria-labelledby="origin-label"
-              aria-invalid={Boolean(errors.origin)}
-              aria-describedby={originDescribedBy}
-            />
-            <button
-              type="button"
-              disabled={disabled || isResolvingCurrentLocation}
-              aria-label="現在地を出発地に入力"
-              title="現在地を出発地に入力"
-              onClick={useCurrentLocation}
-            >
-              <LocateFixed size={16} aria-hidden="true" />
-              現在地
-            </button>
-            <button
-              type="button"
-              disabled={disabled || isResolvingCurrentLocation}
-              aria-label="出発地を地図から選択"
-              aria-haspopup="dialog"
-              title="出発地を地図から選択"
-              onClick={() => openMapPicker("origin")}
-            >
-              <MapPinned size={16} aria-hidden="true" />
-              地図
-            </button>
+            <div className="input-shell__main">
+              <MapPin size={16} aria-hidden="true" />
+              <input
+                value={origin}
+                onChange={(event) => updateOrigin(event.target.value)}
+                placeholder="用賀IC"
+                disabled={disabled}
+                required
+                aria-labelledby="origin-label"
+                aria-invalid={Boolean(errors.origin)}
+                aria-describedby={originDescribedBy}
+              />
+            </div>
+            <div className="input-shell__actions">
+              <button
+                type="button"
+                disabled={disabled || isResolvingCurrentLocation}
+                aria-label="現在地を出発地に入力"
+                title="現在地を出発地に入力"
+                onClick={useCurrentLocation}
+              >
+                <LocateFixed size={16} aria-hidden="true" />
+                現在地
+              </button>
+              <button
+                type="button"
+                disabled={disabled || isResolvingCurrentLocation}
+                aria-label="出発地を地図から選択"
+                aria-haspopup="dialog"
+                title="出発地を地図から選択"
+                onClick={() => openMapPicker("origin")}
+              >
+                <MapPinned size={16} aria-hidden="true" />
+                地図
+              </button>
+            </div>
           </div>
           {isResolvingCurrentLocation ? (
             <small className="form-field__hint form-field__hint--loading">
@@ -229,28 +250,32 @@ export function RouteForm({ disabled = false, onSubmit }: RouteFormProps) {
         <div className="form-field form-field--location">
           <span id="destination-label">目的地</span>
           <div className="input-shell input-shell--location">
-            <MapPin size={16} aria-hidden="true" />
-            <input
-              value={destination}
-              onChange={(event) => updateDestination(event.target.value)}
-              placeholder="御殿場IC"
-              disabled={disabled}
-              required
-              aria-labelledby="destination-label"
-              aria-invalid={Boolean(errors.destination)}
-              aria-describedby={errors.destination ? "destination-error" : undefined}
-            />
-            <button
-              type="button"
-              disabled={disabled}
-              aria-label="目的地を地図から選択"
-              aria-haspopup="dialog"
-              title="目的地を地図から選択"
-              onClick={() => openMapPicker("destination")}
-            >
-              <MapPinned size={16} aria-hidden="true" />
-              地図
-            </button>
+            <div className="input-shell__main">
+              <MapPin size={16} aria-hidden="true" />
+              <input
+                value={destination}
+                onChange={(event) => updateDestination(event.target.value)}
+                placeholder="御殿場IC"
+                disabled={disabled}
+                required
+                aria-labelledby="destination-label"
+                aria-invalid={Boolean(errors.destination)}
+                aria-describedby={errors.destination ? "destination-error" : undefined}
+              />
+            </div>
+            <div className="input-shell__actions">
+              <button
+                type="button"
+                disabled={disabled}
+                aria-label="目的地を地図から選択"
+                aria-haspopup="dialog"
+                title="目的地を地図から選択"
+                onClick={() => openMapPicker("destination")}
+              >
+                <MapPinned size={16} aria-hidden="true" />
+                地図
+              </button>
+            </div>
           </div>
           {errors.destination ? <em id="destination-error">{errors.destination}</em> : null}
         </div>

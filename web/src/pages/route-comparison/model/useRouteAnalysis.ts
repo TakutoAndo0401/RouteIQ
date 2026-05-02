@@ -11,9 +11,12 @@ export function useRouteAnalysis() {
     setBusy(true);
     setError(null);
     try {
-      setAnalysis(await analyzeRoute(input));
+      const nextAnalysis = await analyzeRoute(input);
+      setAnalysis(nextAnalysis);
+      return nextAnalysis;
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "道路状況の確認に失敗しました。");
+      return null;
     } finally {
       setBusy(false);
     }
