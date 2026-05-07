@@ -23,7 +23,7 @@ export function AppHeader({ isDarkMode, onToggleTheme }: AppHeaderProps) {
         aria-pressed={isDarkMode}
         onClick={onToggleTheme}
       >
-        <Icon aria-hidden="true" size={28} strokeWidth={2.2} />
+        <Icon aria-hidden="true" size={34} strokeWidth={2.35} />
       </button>
     </header>
   );
