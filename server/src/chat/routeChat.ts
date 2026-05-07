@@ -1,5 +1,6 @@
 import { resolveFuelPrice } from "../domain/fuel.js";
 import { buildCompareRoutesResult } from "../domain/recommendation.js";
+import { fetchFuelPriceAverages } from "../fuelPrices.js";
 import type { RouteProvider } from "../providers/types.js";
 import type { RouteChatContext } from "./context.js";
 import { routeAnalysisArgsSchema } from "./requestSchema.js";
@@ -28,9 +29,29 @@ export async function analyzeRouteChat(
   context: RouteChatContext
 ): Promise<RouteAnalysisResult> {
   const input = routeAnalysisArgsSchema.parse(args) as RouteAnalysisRequest;
+  let latestRegularFuelPrice: number | undefined;
+  let fuelPriceWarning: string | undefined;
+
+  if (typeof input.fuelPriceYenPerLiter !== "number") {
+    try {
+      const fuelPriceAverages = await fetchFuelPriceAverages();
+      latestRegularFuelPrice = fuelPriceAverages.prices.find(
+        (price) => price.label === "レギュラー"
+      )?.value;
+      if (typeof latestRegularFuelPrice !== "number") {
+        fuelPriceWarning =
+          "最新のレギュラー全国平均価格を取得できなかったため、既定のガソリン価格で概算しました。";
+      }
+    } catch {
+      fuelPriceWarning =
+        "最新のレギュラー全国平均価格を取得できなかったため、既定のガソリン価格で概算しました。";
+    }
+  }
+
   const fuelPrice = resolveFuelPrice(
     input.fuelPriceYenPerLiter,
-    context.config.defaultFuelPriceYenPerLiter
+    context.config.defaultFuelPriceYenPerLiter,
+    latestRegularFuelPrice
   );
   let routeComparison: RouteAnalysisResult["routeComparison"];
   const routeApiFailures: string[] = [];
@@ -55,6 +76,7 @@ export async function analyzeRouteChat(
 
   const warnings = [
     ...context.providerWarnings,
+    ...(fuelPriceWarning ? [fuelPriceWarning] : []),
     ...(fuelPrice.warning ? [fuelPrice.warning] : [])
   ];
 

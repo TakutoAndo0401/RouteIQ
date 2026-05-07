@@ -18,6 +18,10 @@ describe("resolveFuelPrice", () => {
     expect(resolveFuelPrice(180, 170).fuelPriceYenPerLiter).toBe(180);
   });
 
+  it("uses the latest fetched average before environment default", () => {
+    expect(resolveFuelPrice(undefined, 170, 169.7).fuelPriceYenPerLiter).toBe(169.7);
+  });
+
   it("warns when using the built-in fallback", () => {
     const resolved = resolveFuelPrice(undefined, undefined);
     expect(resolved.fuelPriceYenPerLiter).toBe(175);

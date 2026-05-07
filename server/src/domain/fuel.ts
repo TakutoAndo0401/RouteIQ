@@ -25,10 +25,14 @@ export function estimateFuelCostYen(
 
 export function resolveFuelPrice(
   userFuelPriceYenPerLiter: number | undefined,
-  envFuelPriceYenPerLiter: number | undefined
+  envFuelPriceYenPerLiter: number | undefined,
+  latestFuelPriceYenPerLiter?: number
 ): FuelPriceResolution {
   if (typeof userFuelPriceYenPerLiter === "number") {
     return { fuelPriceYenPerLiter: userFuelPriceYenPerLiter };
+  }
+  if (typeof latestFuelPriceYenPerLiter === "number") {
+    return { fuelPriceYenPerLiter: latestFuelPriceYenPerLiter };
   }
   if (typeof envFuelPriceYenPerLiter === "number") {
     return { fuelPriceYenPerLiter: envFuelPriceYenPerLiter };

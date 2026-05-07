@@ -12,7 +12,7 @@ export interface FuelPriceAveragesResponse {
   fetchedAt: string;
 }
 
-const CACHE_TTL_MS = 12 * 60 * 60 * 1000;
+const CACHE_TTL_MS = 60 * 60 * 1000;
 const SOURCES = [
   {
     label: "レギュラー",
