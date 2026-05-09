@@ -30,7 +30,9 @@
   color: var(--lk-onbackground, #18202f);
   background: var(--lk-background, #f7f8fa);
   font-family:
-    Inter,
+    "Noto Sans JP",
+    "Hiragino Sans",
+    "Yu Gothic",
     ui-sans-serif,
     system-ui,
     -apple-system,
@@ -229,7 +231,7 @@ select {
 .route-card__header p {
   margin: 0;
   color: var(--routeiq-muted);
-  font-size: 0.78rem;
+  font-size: 0.875rem;
   font-weight: 700;
   text-transform: uppercase;
 }
@@ -269,7 +271,8 @@ select {
 }
 
 .theme-toggle:focus-visible {
-  outline: none;
+  outline: 3px solid color-mix(in srgb, var(--routeiq-primary) 72%, #ffffff);
+  outline-offset: 2px;
   box-shadow: var(--routeiq-shadow-control);
 }
 
@@ -305,14 +308,14 @@ label,
   gap: var(--routeiq-space-xs);
   min-width: 0;
   color: var(--routeiq-text);
-  font-size: 0.82rem;
+  font-size: 0.875rem;
   font-weight: 700;
 }
 
 label em,
 .form-field em {
   color: var(--routeiq-error);
-  font-size: 0.76rem;
+  font-size: 0.875rem;
   font-style: normal;
   font-weight: 700;
   line-height: 1.4;
@@ -320,7 +323,7 @@ label em,
 
 .form-field__hint {
   color: var(--routeiq-muted);
-  font-size: 0.76rem;
+  font-size: 0.875rem;
   font-weight: 700;
   line-height: 1.4;
 }
@@ -340,7 +343,7 @@ label em,
   background: var(--lk-warningcontainer, #ffdea9);
   border: 1px solid color-mix(in srgb, var(--routeiq-warning) 22%, #ffffff);
   border-radius: var(--routeiq-radius-sm);
-  font-size: 0.78rem;
+  font-size: 0.875rem;
   font-weight: 800;
   line-height: 1.45;
 }
@@ -370,13 +373,13 @@ label em,
 .fuel-average-panel span,
 .fuel-average-panel p {
   color: var(--routeiq-muted);
-  font-size: 0.74rem;
+  font-size: 0.875rem;
   font-weight: 700;
 }
 
 .fuel-average-panel strong {
   color: var(--routeiq-text);
-  font-size: 0.82rem;
+  font-size: 0.875rem;
 }
 
 .fuel-average-panel__prices {
@@ -420,7 +423,7 @@ label em,
 input,
 select {
   width: 100%;
-  min-height: 42px;
+  min-height: 44px;
   padding: 0 var(--routeiq-space-xs);
   color: var(--routeiq-text);
   background: var(--routeiq-panel);
@@ -485,14 +488,14 @@ input[aria-invalid="true"],
   align-items: center;
   justify-content: center;
   gap: var(--routeiq-space-2xs);
-  min-height: 38px;
+  min-height: 44px;
   padding: 0 var(--routeiq-space-xs);
   color: var(--routeiq-primary);
   background: var(--routeiq-primary-soft);
   border: 0;
   border-radius: var(--routeiq-radius-sm);
   cursor: pointer;
-  font-size: 0.78rem;
+  font-size: 0.875rem;
   font-weight: 800;
   transition:
     background-color 140ms ease,
@@ -532,11 +535,11 @@ input[aria-invalid="true"],
 }
 
 .form-details summary {
-  min-height: 42px;
+  min-height: 44px;
   padding: 11px var(--routeiq-space-xs);
   color: var(--routeiq-text);
   cursor: pointer;
-  font-size: 0.86rem;
+  font-size: 0.875rem;
   font-weight: 800;
 }
 
@@ -549,6 +552,93 @@ input[aria-invalid="true"],
 
 .form-details__content .fuel-average-panel {
   grid-column: 1 / -1;
+}
+
+.vehicle-type-group {
+  display: grid;
+  gap: var(--routeiq-space-xs);
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  color: var(--routeiq-text);
+  border: 0;
+}
+
+.vehicle-type-group legend {
+  padding: 0;
+  font-size: 0.875rem;
+  font-weight: 700;
+}
+
+.vehicle-type-options {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--routeiq-space-xs);
+}
+
+.vehicle-type-option {
+  position: relative;
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 var(--routeiq-space-xs);
+  color: var(--routeiq-text);
+  background: var(--routeiq-panel);
+  border: 1px solid var(--routeiq-border-strong);
+  border-radius: var(--routeiq-radius-sm);
+  cursor: pointer;
+}
+
+.vehicle-type-option input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  min-height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.vehicle-type-option span {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--routeiq-space-xs);
+  font-size: 0.875rem;
+  font-weight: 800;
+}
+
+.vehicle-type-option span::before {
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--routeiq-border-strong);
+  border-radius: 999px;
+  content: "";
+}
+
+.vehicle-type-option:has(input:checked) {
+  color: var(--routeiq-primary);
+  background: var(--routeiq-primary-soft);
+  border-color: var(--routeiq-primary);
+}
+
+.vehicle-type-option:has(input:checked) span::before {
+  background: radial-gradient(circle, var(--routeiq-primary) 0 38%, transparent 42%);
+  border-color: var(--routeiq-primary);
+}
+
+.vehicle-type-option:has(input:focus-visible) {
+  outline: 3px solid color-mix(in srgb, var(--routeiq-primary) 72%, #ffffff);
+  outline-offset: 2px;
+}
+
+.vehicle-type-option:has(input:disabled) {
+  cursor: not-allowed;
+  opacity: 0.62;
+}
+
+.vehicle-type-option:has(input:disabled) input {
+  cursor: not-allowed;
 }
 
 .location-picker-dialog__header button {
@@ -597,7 +687,7 @@ input[aria-invalid="true"],
 .location-picker-dialog__header p {
   margin: 0;
   color: var(--routeiq-muted);
-  font-size: 0.76rem;
+  font-size: 0.875rem;
   font-weight: 800;
 }
 
@@ -608,9 +698,9 @@ input[aria-invalid="true"],
 }
 
 .location-picker-dialog__header button {
-  flex: 0 0 36px;
-  width: 36px;
-  height: 36px;
+  flex: 0 0 44px;
+  width: 44px;
+  height: 44px;
   padding: 0;
 }
 
@@ -643,7 +733,7 @@ input[aria-invalid="true"],
 .location-picker__header p {
   margin: 0;
   color: var(--routeiq-muted);
-  font-size: 0.76rem;
+  font-size: 0.875rem;
   font-weight: 800;
 }
 
@@ -666,7 +756,7 @@ input[aria-invalid="true"],
   display: grid;
   gap: var(--routeiq-space-xs);
   color: var(--routeiq-muted);
-  font-size: 0.8rem;
+  font-size: 0.875rem;
   line-height: 1.45;
 }
 
@@ -818,7 +908,7 @@ select:disabled {
 .route-history__header p {
   margin: 0;
   color: var(--routeiq-muted);
-  font-size: 0.74rem;
+  font-size: 0.875rem;
   font-weight: 800;
   text-transform: uppercase;
 }
@@ -927,7 +1017,7 @@ select:disabled {
 }
 
 .input-shell__main input {
-  min-height: 38px;
+  min-height: 44px;
   color: var(--routeiq-road);
   background: transparent;
   background-color: transparent;
@@ -1063,19 +1153,19 @@ select:disabled {
 }
 
 .route-history__actions button {
-  min-height: 30px;
-  padding: 0 10px;
+  min-height: 44px;
+  padding: 0 var(--routeiq-space-xs);
   border-radius: 999px;
-  font-size: 0.76rem;
+  font-size: 0.875rem;
 }
 
 .route-history__delete {
   position: absolute;
-  top: 10px;
-  right: 10px;
-  width: 34px;
-  height: 34px;
-  min-height: 34px;
+  top: var(--routeiq-space-xs);
+  right: var(--routeiq-space-xs);
+  width: 44px;
+  height: 44px;
+  min-height: 44px;
   padding: 0;
   background: color-mix(in srgb, var(--routeiq-danger-soft) 68%, var(--routeiq-panel));
   border-color: color-mix(in srgb, var(--routeiq-danger) 18%, var(--routeiq-border));
@@ -1168,7 +1258,7 @@ select:disabled {
   grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   gap: 6px;
   align-items: center;
-  font-size: 0.84rem;
+  font-size: 0.875rem;
 }
 
 .route-history__route strong {
@@ -1193,7 +1283,7 @@ select:disabled {
 .route-history__date,
 .route-history__empty {
   color: var(--routeiq-muted);
-  font-size: 0.74rem;
+  font-size: 0.875rem;
   font-weight: 800;
 }
 
@@ -1235,7 +1325,7 @@ select:disabled {
 .result-dashboard--comparison {
   grid-template-columns:
     minmax(380px, 1fr)
-    10px
+    24px
     minmax(420px, min(var(--routeiq-map-column, 62%), 100%));
   min-height: calc(100vh - 112px);
 }
@@ -1251,13 +1341,13 @@ select:disabled {
   align-self: start;
   gap: var(--routeiq-space-2xs);
   justify-self: start;
-  min-height: 32px;
+  min-height: 44px;
   padding: 0 var(--routeiq-space-xs);
   color: var(--lk-onwarningcontainer, #271900);
   background: var(--lk-warningcontainer, #ffdea9);
   border: 1px solid color-mix(in srgb, var(--routeiq-warning) 20%, #ffffff);
   border-radius: var(--routeiq-radius-sm);
-  font-size: 0.78rem;
+  font-size: 0.875rem;
   font-weight: 800;
 }
 
@@ -1276,7 +1366,7 @@ select:disabled {
 .result-answer p {
   margin: 0;
   color: var(--routeiq-muted);
-  font-size: 0.78rem;
+  font-size: 0.875rem;
   font-weight: 800;
 }
 
@@ -1309,7 +1399,7 @@ select:disabled {
 .route-map__header p {
   margin: 0;
   color: var(--routeiq-muted);
-  font-size: 0.76rem;
+  font-size: 0.875rem;
   font-weight: 800;
 }
 
@@ -1323,14 +1413,14 @@ select:disabled {
   display: inline-flex;
   align-items: center;
   gap: var(--routeiq-space-2xs);
-  min-height: 34px;
+  min-height: 44px;
   padding: 0 var(--routeiq-space-xs);
   color: var(--routeiq-accent);
   text-decoration: none;
   background: var(--routeiq-accent-soft);
   border: 0;
   border-radius: var(--routeiq-radius-sm);
-  font-size: 0.84rem;
+  font-size: 0.875rem;
   font-weight: 800;
 }
 
@@ -1359,8 +1449,8 @@ select:disabled {
 
 .result-dashboard__resize {
   align-self: stretch;
-  width: 10px;
-  min-width: 10px;
+  width: 24px;
+  min-width: 24px;
   padding: 0;
   background: transparent;
   border: 0;
@@ -1388,7 +1478,8 @@ select:disabled {
 }
 
 .result-dashboard__resize:focus-visible {
-  outline: none;
+  outline: 3px solid color-mix(in srgb, var(--routeiq-primary) 72%, #ffffff);
+  outline-offset: 2px;
   box-shadow: var(--routeiq-shadow-control);
 }
 
@@ -1480,7 +1571,7 @@ select:disabled {
 .route-option span,
 .route-option dt {
   color: var(--routeiq-muted);
-  font-size: 0.75rem;
+  font-size: 0.875rem;
   font-weight: 800;
 }
 
@@ -1562,7 +1653,7 @@ select:disabled {
 
 .metric span {
   color: var(--routeiq-muted);
-  font-size: 0.75rem;
+  font-size: 0.875rem;
   font-weight: 700;
 }
 
@@ -1590,7 +1681,7 @@ select:disabled {
   align-items: flex-start;
   gap: var(--routeiq-space-xs);
   color: var(--routeiq-muted);
-  font-size: 0.86rem;
+  font-size: 0.875rem;
   line-height: 1.55;
 }
 
@@ -1660,11 +1751,11 @@ select:disabled {
 }
 
 .route-detail-disclosure summary {
-  min-height: 40px;
+  min-height: 44px;
   padding: 10px var(--routeiq-space-xs);
   color: var(--routeiq-text);
   cursor: pointer;
-  font-size: 0.84rem;
+  font-size: 0.875rem;
   font-weight: 800;
 }
 
@@ -1672,6 +1763,15 @@ select:disabled {
   display: grid;
   gap: var(--routeiq-space-sm);
   padding: 0 var(--routeiq-space-xs) var(--routeiq-space-xs);
+}
+
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+summary:focus-visible,
+a:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--routeiq-primary) 72%, #ffffff);
+  outline-offset: 2px;
 }
 
 @media (max-width: 760px) {

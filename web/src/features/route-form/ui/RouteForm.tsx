@@ -36,7 +36,9 @@ export function RouteForm({ disabled = false, initialValues = null, onSubmit }: 
   const { fuelPriceAverages, fuelPriceError } = useFuelPriceAverages();
   const [isMapPickerOpen, setIsMapPickerOpen] = useState(false);
   const [mapPickerTarget, setMapPickerTarget] = useState<MapPickerTarget>("origin");
+  const mapPickerDialogRef = useRef<HTMLElement | null>(null);
   const closeMapPickerButtonRef = useRef<HTMLButtonElement | null>(null);
+  const mapPickerReturnFocusRef = useRef<HTMLElement | null>(null);
   const originDescribedBy =
     [
       errors.origin ? "origin-error" : undefined,
@@ -76,8 +78,14 @@ export function RouteForm({ disabled = false, initialValues = null, onSubmit }: 
   };
 
   const openMapPicker = (target: MapPickerTarget) => {
+    mapPickerReturnFocusRef.current =
+      document.activeElement instanceof HTMLElement ? document.activeElement : null;
     setMapPickerTarget(target);
     setIsMapPickerOpen(true);
+  };
+
+  const closeMapPicker = () => {
+    setIsMapPickerOpen(false);
   };
 
   const useCurrentLocation = () => {
@@ -131,9 +139,44 @@ export function RouteForm({ disabled = false, initialValues = null, onSubmit }: 
   useEffect(() => {
     if (!isMapPickerOpen) return undefined;
 
-    closeMapPickerButtonRef.current?.focus();
+    requestAnimationFrame(() => closeMapPickerButtonRef.current?.focus());
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setIsMapPickerOpen(false);
+      if (event.key === "Escape") {
+        event.preventDefault();
+        closeMapPicker();
+        return;
+      }
+
+      if (event.key !== "Tab") return;
+
+      const dialog = mapPickerDialogRef.current;
+      if (!dialog) return;
+
+      const focusableElements = Array.from(
+        dialog.querySelectorAll<HTMLElement>(
+          [
+            "a[href]",
+            "button:not([disabled])",
+            "input:not([disabled])",
+            "select:not([disabled])",
+            "textarea:not([disabled])",
+            "[tabindex]:not([tabindex='-1'])"
+          ].join(",")
+        )
+      ).filter((element) => !element.hasAttribute("aria-hidden"));
+      if (focusableElements.length === 0) return;
+
+      const firstElement = focusableElements[0];
+      const lastElement = focusableElements[focusableElements.length - 1];
+      if (!firstElement || !lastElement) return;
+
+      if (event.shiftKey && document.activeElement === firstElement) {
+        event.preventDefault();
+        lastElement.focus();
+      } else if (!event.shiftKey && document.activeElement === lastElement) {
+        event.preventDefault();
+        firstElement.focus();
+      }
     };
 
     document.body.classList.add("is-modal-open");
@@ -142,6 +185,8 @@ export function RouteForm({ disabled = false, initialValues = null, onSubmit }: 
     return () => {
       document.body.classList.remove("is-modal-open");
       window.removeEventListener("keydown", handleKeyDown);
+      mapPickerReturnFocusRef.current?.focus();
+      mapPickerReturnFocusRef.current = null;
     };
   }, [isMapPickerOpen]);
 
@@ -317,20 +362,24 @@ export function RouteForm({ disabled = false, initialValues = null, onSubmit }: 
               />
               {errors.fuelPrice ? <em id="fuel-price-error">{errors.fuelPrice}</em> : null}
             </label>
-            <label>
-              <span>車両</span>
-              <select
-                value={vehicleType}
-                onChange={(event) => setVehicleType(event.target.value)}
-                disabled={disabled}
-              >
+            <fieldset className="vehicle-type-group">
+              <legend>車両</legend>
+              <div className="vehicle-type-options">
                 {VEHICLE_TYPES.map((type) => (
-                  <option key={type} value={type}>
-                    {type}
-                  </option>
+                  <label key={type} className="vehicle-type-option">
+                    <input
+                      type="radio"
+                      name="vehicleType"
+                      value={type}
+                      checked={vehicleType === type}
+                      disabled={disabled}
+                      onChange={(event) => setVehicleType(event.target.value)}
+                    />
+                    <span>{type}</span>
+                  </label>
                 ))}
-              </select>
-            </label>
+              </div>
+            </fieldset>
             <div className="fuel-average-panel" aria-label="燃料全国平均価格">
               <div>
                 <span>全国平均</span>
@@ -372,10 +421,11 @@ export function RouteForm({ disabled = false, initialValues = null, onSubmit }: 
               className="location-picker-modal"
               role="presentation"
               onMouseDown={(event) => {
-                if (event.target === event.currentTarget) setIsMapPickerOpen(false);
+                if (event.target === event.currentTarget) closeMapPicker();
               }}
             >
               <section
+                ref={mapPickerDialogRef}
                 className="location-picker-dialog"
                 role="dialog"
                 aria-modal="true"
@@ -392,7 +442,7 @@ export function RouteForm({ disabled = false, initialValues = null, onSubmit }: 
                     ref={closeMapPickerButtonRef}
                     type="button"
                     aria-label="地図選択を閉じる"
-                    onClick={() => setIsMapPickerOpen(false)}
+                    onClick={closeMapPicker}
                   >
                     <X size={18} aria-hidden="true" />
                   </button>
@@ -404,7 +454,7 @@ export function RouteForm({ disabled = false, initialValues = null, onSubmit }: 
                   target={mapPickerTarget}
                   onOriginChange={updateOrigin}
                   onDestinationChange={updateDestination}
-                  onSelectComplete={() => setIsMapPickerOpen(false)}
+                  onSelectComplete={closeMapPicker}
                 />
               </section>
             </div>,
