@@ -21,10 +21,10 @@ export function RouteCard({ routeType, route, recommended }: RouteCardProps) {
     <article className={`route-card route-card--${routeType}`}>
       <div className="route-card__header">
         <div>
-          <p>{title}</p>
-          <h3>{recommended ? "おすすめ" : "比較対象"}</h3>
+          <h3>{title}</h3>
+          {recommended && <span className="route-card__badge">おすすめ</span>}
         </div>
-        <Route size={22} aria-hidden="true" />
+        <Route size={18} aria-hidden="true" />
       </div>
       <div className="metric-grid">
         <Metric label="距離" value={formatDistanceKm(route.distanceKm)} />

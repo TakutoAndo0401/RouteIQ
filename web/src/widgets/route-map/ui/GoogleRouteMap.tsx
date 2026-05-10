@@ -53,13 +53,10 @@ export function GoogleRouteMap({ input }: GoogleRouteMapProps) {
   return (
     <section className="route-map" aria-label="Google マップ">
       <div className="route-map__header">
-        <div>
-          <p>Google マップ</p>
-          <h2>経路表示</h2>
-        </div>
+        <h2>経路表示</h2>
         <a href={directionsUrl} target="_blank" rel="noreferrer">
           <ExternalLink size={16} aria-hidden="true" />
-          開く
+          Google マップで開く
         </a>
       </div>
 

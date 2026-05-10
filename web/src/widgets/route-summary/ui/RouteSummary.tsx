@@ -1,4 +1,4 @@
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, Clock, TrendingUp, Zap } from "lucide-react";
 import {
   formatYen,
   formatDistanceKm,
@@ -77,8 +77,8 @@ export function RouteSummary({ result }: RouteSummaryProps) {
     <div className="summary-stack">
       <section className="recommendation-band">
         <div>
-          <p>おすすめ</p>
           <h2>
+            <Zap size={15} aria-hidden="true" className="recommendation-band__icon" />
             {result.recommendedRoute === "expressway"
               ? "高速優先ルート"
               : "一般道ルート"}
@@ -100,17 +100,19 @@ export function RouteSummary({ result }: RouteSummaryProps) {
         />
       </section>
 
-      <section className="comparison-panel">
+      <section className="comparison-panel" aria-label="比較メトリクス">
         <div className="comparison-grid">
           <Metric
             label="高速優先の短縮時間"
             value={formatMinutes(result.comparison.timeDifferenceMinutes)}
             tone={result.comparison.timeDifferenceMinutes > 0 ? "good" : "neutral"}
+            icon={<Clock size={15} aria-hidden="true" />}
           />
           <Metric
             label="高速優先の追加費用"
             value={formatYen(result.comparison.costDifferenceYen)}
             tone="warn"
+            icon={<TrendingUp size={15} aria-hidden="true" />}
           />
           <Metric
             label="1分短縮あたり"

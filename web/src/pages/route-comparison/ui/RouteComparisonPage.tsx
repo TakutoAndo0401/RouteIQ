@@ -1,4 +1,4 @@
-import { ChevronDown, History, Menu, Trash2, X } from "lucide-react";
+import { ChevronDown, History, MapPin, Navigation, Trash2 } from "lucide-react";
 import {
   useCallback,
   useEffect,
@@ -186,7 +186,7 @@ function RouteHistoryContent({
             title="履歴を削除"
             onClick={() => onDelete(entry.id)}
           >
-            <Trash2 size={18} aria-hidden="true" />
+            <Trash2 size={15} aria-hidden="true" />
           </button>
         </li>
       ))}
@@ -197,12 +197,7 @@ function RouteHistoryContent({
 }
 
 function RouteHistoryTitle() {
-  return (
-    <div>
-      <p>Trip History</p>
-      <h2>検索履歴</h2>
-    </div>
-  );
+  return <h2 className="route-history__title">検索履歴</h2>;
 }
 
 function RouteHistoryActions({
@@ -239,7 +234,7 @@ function RouteHistoryHeader({
           hasEntries={entries.length > 0}
           onClear={onClear}
         />
-        <History size={18} aria-hidden="true" />
+        <History size={16} aria-hidden="true" />
       </div>
     </div>
   );
@@ -419,25 +414,18 @@ export function RouteComparisonPage({ isDarkMode, onToggleTheme }: RouteComparis
 
   return (
     <main className="app-shell app-shell--route-status">
-      <AppHeader isDarkMode={isDarkMode} onToggleTheme={onToggleTheme} />
+      <AppHeader
+        isDarkMode={isDarkMode}
+        isSidebarOpen={isSidebarOpen}
+        onToggleSidebar={() => setIsSidebarOpen((prev) => !prev)}
+        onToggleTheme={onToggleTheme}
+      />
 
       <section className={`status-layout${isSidebarOpen ? "" : " status-layout--sidebar-closed"}`}>
         {isSidebarOpen ? (
           <aside className="condition-pane" aria-label="ルート検索条件">
             <div className="condition-pane__header">
-              <div>
-                <p>Route Planner</p>
-                <h2>条件入力</h2>
-              </div>
-              <button
-                type="button"
-                className="sidebar-toggle"
-                aria-label="条件入力を閉じる"
-                title="条件入力を閉じる"
-                onClick={() => setIsSidebarOpen(false)}
-              >
-                <X size={34} aria-hidden="true" />
-              </button>
+              <h2>条件入力</h2>
             </div>
             <RouteForm disabled={busy} initialValues={selectedFormDraft} onSubmit={handleSubmit} />
             <RouteHistoryPanel
@@ -452,18 +440,6 @@ export function RouteComparisonPage({ isDarkMode, onToggleTheme }: RouteComparis
         ) : null}
 
         <section ref={resultPaneRef} className="result-pane" aria-label="道路状況の確認結果">
-          {!isSidebarOpen ? (
-            <button
-              type="button"
-              className="result-pane__sidebar-open"
-              aria-label="条件入力を表示"
-              title="条件入力を表示"
-              onClick={() => setIsSidebarOpen(true)}
-            >
-              <Menu size={24} aria-hidden="true" />
-              検索条件
-            </button>
-          ) : null}
           {busy ? (
             <div className="result-pane__busy">
               <LoadingSpinner label="道路状況を確認中" />
@@ -508,7 +484,33 @@ export function RouteComparisonPage({ isDarkMode, onToggleTheme }: RouteComparis
             )
           ) : (
             <section className="empty-state">
-              <h2>条件を入力すると、現在の道路状況を確認します</h2>
+              <div className="empty-state__illustration" aria-hidden="true">
+                <div className="empty-state__icon-group">
+                  <div className="empty-state__icon empty-state__icon--pin">
+                    <MapPin size={28} strokeWidth={2.2} />
+                  </div>
+                  <div className="empty-state__icon-connector" />
+                  <div className="empty-state__icon empty-state__icon--nav">
+                    <Navigation size={28} strokeWidth={2.2} />
+                  </div>
+                </div>
+              </div>
+              <div className="empty-state__content">
+                <h2>ルートを比較してみましょう</h2>
+                <p className="empty-state__description">
+                  出発地と目的地を入力すると、高速道路と一般道の<br />
+                  <strong>所要時間・料金・ガソリン代</strong>をまとめて比較できます
+                </p>
+                {!isSidebarOpen ? (
+                  <button
+                    type="button"
+                    className="empty-state__cta"
+                    onClick={() => setIsSidebarOpen(true)}
+                  >
+                    条件を入力する
+                  </button>
+                ) : null}
+              </div>
             </section>
           )}
         </section>
