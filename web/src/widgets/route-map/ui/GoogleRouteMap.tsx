@@ -1,4 +1,4 @@
-import { ExternalLink, MapPinned } from "lucide-react";
+import { ArrowRight, ExternalLink, MapPinned } from "lucide-react";
 import { useEffect, useState } from "react";
 import type { RouteInput } from "../../../entities/route/model";
 import {
@@ -31,10 +31,20 @@ function buildEmbedUrl(input: RouteInput, apiKey: string | null): string | null 
   return url.toString();
 }
 
+function formatLocationLabel(value: string): string {
+  return value
+    .replace(/^日本、?/, "")
+    .replace(/〒\d{3}-\d{4}\s*/, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 export function GoogleRouteMap({ input }: GoogleRouteMapProps) {
   const [apiKey, setApiKey] = useState<string | null>(null);
   const directionsUrl = buildDirectionsUrl(input);
   const embedUrl = buildEmbedUrl(input, apiKey);
+  const originLabel = formatLocationLabel(input.origin);
+  const destinationLabel = formatLocationLabel(input.destination);
 
   useEffect(() => {
     let ignore = false;
@@ -53,17 +63,27 @@ export function GoogleRouteMap({ input }: GoogleRouteMapProps) {
   return (
     <section className="route-map" aria-label="Google マップ">
       <div className="route-map__header">
-        <div>
+        <div className="route-map__heading">
           <p>経路表示</p>
-          <h2>経路マップ</h2>
-          <span className="route-map__summary">
-            {input.origin} <span aria-hidden="true">→</span> {input.destination}
-          </span>
+          <h2>地図でルートを確認</h2>
         </div>
-        <a href={directionsUrl} target="_blank" rel="noreferrer">
+        <a className="route-map__link" href={directionsUrl} target="_blank" rel="noreferrer">
           <ExternalLink size={16} aria-hidden="true" />
           Google マップで開く
         </a>
+        <div className="route-map__waypoints" aria-label="表示中の経路">
+          <div className="route-map__waypoint">
+            <span className="route-map__waypoint-tag">出発地</span>
+            <strong title={input.origin}>{originLabel}</strong>
+          </div>
+          <span className="route-map__waypoint-arrow" aria-hidden="true">
+            <ArrowRight size={16} />
+          </span>
+          <div className="route-map__waypoint route-map__waypoint--destination">
+            <span className="route-map__waypoint-tag">目的地</span>
+            <strong title={input.destination}>{destinationLabel}</strong>
+          </div>
+        </div>
       </div>
 
       {embedUrl ? (

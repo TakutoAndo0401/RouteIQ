@@ -17,14 +17,14 @@ function buildRecommendationLead(result: CompareRoutesResult) {
   const costDifference = formatYen(result.comparison.costDifferenceYen);
 
   if (result.recommendedRoute === "expressway") {
-    return `今回は高速優先がおすすめです。一般道より ${timeDifference} 早く、追加費用は ${costDifference} です。`;
+    return `今回は高速優先がおすすめです。一般道より${timeDifference}早く、追加費用は${costDifference}です。`;
   }
 
   if (result.comparison.timeDifferenceMinutes > 0) {
-    return `今回は一般道がおすすめです。高速優先でも短縮は ${timeDifference} で、${costDifference} 余計にかかります。`;
+    return `今回は一般道がおすすめです。高速優先でも${timeDifference}しか短縮できず、${costDifference}余計にかかります。`;
   }
 
-  return `今回は一般道がおすすめです。所要時間差がほぼなく、${costDifference} の追加費用を避けられます。`;
+  return `今回は一般道がおすすめです。所要時間差がほぼなく、${costDifference}の追加費用を避けられます。`;
 }
 
 function ListBlock({
@@ -136,7 +136,7 @@ export function RouteSummary({ result }: RouteSummaryProps) {
       <section className="comparison-panel" aria-label="比較メトリクス">
         <h3>判断の目安</h3>
         <p className="comparison-panel__lead">
-          時間短縮に対してどれだけ費用差があるかを先に確認すると、意思決定が速くなります。
+          時間短縮に対する費用差を先に確認すると、意思決定が速くなります。
         </p>
         <div className="comparison-grid">
           <Metric
