@@ -279,11 +279,17 @@ select {
 }
 
 .app-header__brand {
-  display: grid;
-  gap: 3px;
+  display: flex;
+  align-items: center;
   min-width: 0;
   padding-left: 12px;
   border-left: 1px solid color-mix(in srgb, var(--routeiq-border-strong) 42%, transparent);
+}
+
+.app-header__brand-copy {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
 }
 
 .app-header p {
@@ -902,25 +908,27 @@ input[aria-invalid="true"],
 
 .location-picker__status dl {
   display: grid;
-  gap: 6px;
+  gap: 8px;
   margin: 0;
 }
 
 .location-picker__status div {
   display: grid;
-  grid-template-columns: 52px minmax(0, 1fr);
-  gap: 8px;
+  grid-template-columns: minmax(4.8rem, max-content) minmax(0, 1fr);
+  gap: 10px;
   align-items: start;
 }
 
 .location-picker__status dt {
   color: var(--routeiq-muted);
   font-weight: 800;
+  white-space: nowrap;
 }
 
 .location-picker__status dd {
   min-width: 0;
   margin: 0;
+  line-height: 1.55;
   overflow-wrap: anywhere;
 }
 
@@ -1908,15 +1916,15 @@ select:disabled {
 }
 
 .recommendation-band h2 {
-  display: flex;
-  align-items: center;
-  gap: 6px;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
+  column-gap: 8px;
   margin: 0 0 6px;
-  max-width: 20ch;
   font-size: 1.26rem;
   line-height: 1.2;
   letter-spacing: 0;
-  text-wrap: balance;
+  text-wrap: pretty;
 }
 
 .recommendation-band__eyebrow {
@@ -1931,6 +1939,11 @@ select:disabled {
 .recommendation-band__icon {
   color: var(--routeiq-accent);
   flex-shrink: 0;
+  margin-top: 0.12em;
+}
+
+.recommendation-band__title {
+  min-width: 0;
 }
 
 .recommendation-band__lead {
@@ -1943,7 +1956,7 @@ select:disabled {
   text-wrap: pretty;
 }
 
-.recommendation-band span {
+.recommendation-band__reason {
   display: block;
   max-width: 42ch;
   color: var(--routeiq-muted);

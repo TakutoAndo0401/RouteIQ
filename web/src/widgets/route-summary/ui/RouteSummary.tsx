@@ -97,10 +97,12 @@ export function RouteSummary({ result }: RouteSummaryProps) {
           <p className="recommendation-band__eyebrow">おすすめの判断</p>
           <h2>
             <Zap size={15} aria-hidden="true" className="recommendation-band__icon" />
-            {recommendedLabel}で進むのが良さそうです
+            <span className="recommendation-band__title">
+              {recommendedLabel}で進むのが良さそうです
+            </span>
           </h2>
           <p className="recommendation-band__lead">{recommendationLead}</p>
-          <span>{result.recommendationReason}</span>
+          <span className="recommendation-band__reason">{result.recommendationReason}</span>
         </div>
         <div className="recommendation-band__metrics" aria-label="判断の要点">
           <div>

@@ -32,7 +32,7 @@ export function AppHeader({
           <SidebarIcon aria-hidden="true" size={24} strokeWidth={2.35} />
         </button>
         <div className="app-header__brand">
-          <div>
+          <div className="app-header__brand-copy">
             <p>RouteIQ</p>
             <h1>道路状況チェック</h1>
           </div>
