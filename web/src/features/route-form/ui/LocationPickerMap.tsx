@@ -141,13 +141,6 @@ export function LocationPickerMap({
 
   return (
     <section className="location-picker" aria-label="地図で地点を選択">
-      <div className="location-picker__header">
-        <div>
-          <p>地図選択</p>
-          <h2>{targetLabel}を地図で選択</h2>
-        </div>
-      </div>
-
       <div ref={mapNodeRef} className="location-picker__map" />
       <div className="location-picker__status" aria-live="polite">
         <span className="location-picker__status-message">

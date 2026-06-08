@@ -820,19 +820,6 @@ input[aria-invalid="true"],
   gap: 12px;
 }
 
-.location-picker-dialog__header p {
-  margin: 0;
-  color: var(--routeiq-muted);
-  font-size: 0.875rem;
-  font-weight: 800;
-}
-
-.location-picker-dialog__header h2 {
-  margin: 2px 0 0;
-  color: var(--routeiq-text);
-  font-size: 1.05rem;
-}
-
 .location-picker-dialog__header button {
   flex: 0 0 44px;
   width: 44px;
