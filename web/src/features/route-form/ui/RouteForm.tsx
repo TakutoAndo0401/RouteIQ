@@ -36,6 +36,7 @@ export function RouteForm({ disabled = false, initialValues = null, onSubmit }: 
   const { fuelPriceAverages, fuelPriceError } = useFuelPriceAverages();
   const [isMapPickerOpen, setIsMapPickerOpen] = useState(false);
   const [mapPickerTarget, setMapPickerTarget] = useState<MapPickerTarget>("origin");
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const mapPickerDialogRef = useRef<HTMLElement | null>(null);
   const closeMapPickerButtonRef = useRef<HTMLButtonElement | null>(null);
   const mapPickerReturnFocusRef = useRef<HTMLElement | null>(null);
@@ -61,6 +62,16 @@ export function RouteForm({ disabled = false, initialValues = null, onSubmit }: 
     setVehicleType(initialValues.vehicleType ?? "普通車");
     setErrors({});
   }, [initialValues]);
+
+  useEffect(() => {
+    if (errors.fuelEfficiency || errors.fuelPrice) {
+      setIsDetailsOpen(true);
+    }
+  }, [errors.fuelEfficiency, errors.fuelPrice]);
+
+  const detailSummary = `${vehicleType}・${fuelEfficiency || "15"}km/L・${
+    fuelPrice ? `${fuelPrice}円/L` : "全国平均"
+  }`;
 
   const updateOrigin = (value: string) => {
     setOrigin(value);
@@ -217,6 +228,7 @@ export function RouteForm({ disabled = false, initialValues = null, onSubmit }: 
   return (
     <form
       className="route-form"
+      autoComplete="off"
       noValidate
       onSubmit={(event) => {
         event.preventDefault();
@@ -244,11 +256,16 @@ export function RouteForm({ disabled = false, initialValues = null, onSubmit }: 
             <div className="input-shell__main">
               <MapPin size={16} aria-hidden="true" />
               <input
+                name="routeiq-origin"
                 value={origin}
                 onChange={(event) => updateOrigin(event.target.value)}
-                placeholder="用賀IC"
+                placeholder="例: 用賀IC"
                 disabled={disabled}
                 required
+                autoComplete="off"
+                autoCorrect="off"
+                autoCapitalize="off"
+                spellCheck={false}
                 aria-labelledby="origin-label"
                 aria-invalid={Boolean(errors.origin)}
                 aria-describedby={originDescribedBy}
@@ -278,6 +295,7 @@ export function RouteForm({ disabled = false, initialValues = null, onSubmit }: 
               </button>
             </div>
           </div>
+          <small className="form-field__hint">IC名、住所、緯度経度で指定できます。</small>
           {isResolvingCurrentLocation ? (
             <small className="form-field__hint form-field__hint--loading">
               <LoadingSpinner label="現在地を確認中" size={14} />
@@ -298,11 +316,16 @@ export function RouteForm({ disabled = false, initialValues = null, onSubmit }: 
             <div className="input-shell__main">
               <MapPin size={16} aria-hidden="true" />
               <input
+                name="routeiq-destination"
                 value={destination}
                 onChange={(event) => updateDestination(event.target.value)}
-                placeholder="御殿場IC"
+                placeholder="例: 御殿場IC"
                 disabled={disabled}
                 required
+                autoComplete="off"
+                autoCorrect="off"
+                autoCapitalize="off"
+                spellCheck={false}
                 aria-labelledby="destination-label"
                 aria-invalid={Boolean(errors.destination)}
                 aria-describedby={errors.destination ? "destination-error" : undefined}
@@ -326,9 +349,15 @@ export function RouteForm({ disabled = false, initialValues = null, onSubmit }: 
         </div>
         <details
           className="form-details form-grid__wide"
-          open={Boolean(errors.fuelEfficiency || errors.fuelPrice)}
+          open={isDetailsOpen}
+          onToggle={(event) => setIsDetailsOpen(event.currentTarget.open)}
         >
-          <summary>詳細条件</summary>
+          <summary>
+            <span className="form-details__summary">
+              <span>詳細条件</span>
+              <span className="form-details__summary-text">{detailSummary}</span>
+            </span>
+          </summary>
           <div className="form-details__content">
             <label>
               <span>燃費 km/L</span>

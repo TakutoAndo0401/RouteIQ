@@ -43,12 +43,19 @@ export function LocationPickerMap({
   const targetRef = useRef<PickerTarget>(target);
   const disabledRef = useRef(disabled);
   const [status, setStatus] = useState("地図を読み込み中です。");
+  const [selectedAddress, setSelectedAddress] = useState<string | null>(null);
+  const [isResolvingSelection, setIsResolvingSelection] = useState(false);
 
   targetRef.current = target;
   disabledRef.current = disabled;
 
   const targetLabel = target === "origin" ? "出発地" : "目的地";
   const currentValue = target === "origin" ? origin : destination;
+
+  useEffect(() => {
+    setSelectedAddress(null);
+    setIsResolvingSelection(false);
+  }, [target]);
 
   useEffect(() => {
     let ignore = false;
@@ -80,7 +87,9 @@ export function LocationPickerMap({
           fullscreenControl: false
         });
         const geocoder = new google.maps.Geocoder();
-        setStatus(`${targetRef.current === "origin" ? "出発地" : "目的地"}にしたい地点を地図上でクリックしてください。`);
+        setStatus(
+          `${targetRef.current === "origin" ? "出発地" : "目的地"}にしたい地点を地図上でクリックし、下のボタンで確定してください。`
+        );
 
         listener = map.addListener("click", (event) => {
           const position = event.latLng?.toJSON();
@@ -95,17 +104,22 @@ export function LocationPickerMap({
             markerRef.current = new google.maps.Marker({ map, position, label, title });
           }
 
+          setIsResolvingSelection(true);
+          setSelectedAddress(null);
           setStatus(`${title}を確認しています。`);
-          void reverseGeocode(geocoder, position).then((address) => {
-            if (selectedTarget === "origin") {
-              onOriginChange(address);
-              setStatus("出発地を設定しました。");
-            } else {
-              onDestinationChange(address);
-              setStatus("目的地を設定しました。");
-            }
-            onSelectComplete?.();
-          });
+          void reverseGeocode(geocoder, position)
+            .then((address) => {
+              setSelectedAddress(address);
+              setStatus(`${title}の候補を確認しました。内容を確認して確定してください。`);
+            })
+            .catch(() => {
+              const fallbackAddress = `${position.lat.toFixed(6)},${position.lng.toFixed(6)}`;
+              setSelectedAddress(fallbackAddress);
+              setStatus(`${title}の候補を確認しました。内容を確認して確定してください。`);
+            })
+            .finally(() => {
+              setIsResolvingSelection(false);
+            });
         });
       })
       .catch((error: unknown) => {
@@ -137,15 +151,42 @@ export function LocationPickerMap({
       <div ref={mapNodeRef} className="location-picker__map" />
       <div className="location-picker__status" aria-live="polite">
         <span className="location-picker__status-message">
-          {isLoadingStatus(status) ? <LoadingSpinner label={status} size={14} /> : null}
+          {isLoadingStatus(status) || isResolvingSelection ? (
+            <LoadingSpinner label={status} size={14} />
+          ) : null}
           <span>{status}</span>
         </span>
         <dl>
           <div>
-            <dt>{targetLabel}</dt>
+            <dt>現在</dt>
             <dd>{currentValue || "未設定"}</dd>
           </div>
+          <div>
+            <dt>選択候補</dt>
+            <dd>{selectedAddress ?? "まだ選択していません"}</dd>
+          </div>
         </dl>
+      </div>
+      <div className="location-picker__actions">
+        <button
+          className="primary-button"
+          type="button"
+          disabled={disabled || isResolvingSelection || !selectedAddress}
+          onClick={() => {
+            if (!selectedAddress) return;
+
+            if (target === "origin") {
+              onOriginChange(selectedAddress);
+            } else {
+              onDestinationChange(selectedAddress);
+            }
+
+            setStatus(`${targetLabel}を設定しました。`);
+            onSelectComplete?.();
+          }}
+        >
+          {targetLabel}に設定する
+        </button>
       </div>
     </section>
   );

@@ -25,6 +25,93 @@ function formatMessage(text: string) {
   ));
 }
 
+function summarizeFailureMessage(message: string) {
+  if (message.includes("did not include a route")) {
+    return "この条件では経路候補を取得できませんでした。IC 名だけだと判定できない場合があります。";
+  }
+
+  if (message.includes("API key") || message.includes("REQUEST_DENIED")) {
+    return "地図サービスの設定を確認できませんでした。時間をおいて再試行してください。";
+  }
+
+  if (message.includes("ROUTE_PROVIDER=mock")) {
+    return "比較用の経路データがまだ接続されていません。";
+  }
+
+  return "経路比較に必要なデータを取得できませんでした。";
+}
+
+function buildFailureActions(input: RouteAnalysisRequest) {
+  const hasIcsOnly = [input.origin, input.destination].some(
+    (value) => value.includes("IC") || value.includes("インター")
+  );
+
+  return [
+    hasIcsOnly
+      ? "IC 名だけでなく、住所や施設名でもう一度入力する"
+      : "地図から出発地と目的地を選び直す",
+    "地図ボタンから地点を選び、候補を確定してから比較する",
+    "少し時間をおいて再試行する"
+  ];
+}
+
+function AnalysisFailureState({
+  input,
+  apiFailures,
+  answer
+}: {
+  input: RouteAnalysisRequest;
+  apiFailures: string[];
+  answer: string;
+}) {
+  const failureSummary = Array.from(new Set(apiFailures.map(summarizeFailureMessage)));
+  const actions = buildFailureActions(input);
+  const technicalDetails = answer
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean);
+
+  return (
+    <article className="analysis-failure" aria-label="比較結果を取得できなかった理由">
+      <div className="analysis-failure__hero">
+        <p className="analysis-failure__eyebrow">比較結果を取得できませんでした</p>
+        <h2>入力条件を少し直すと取得できる可能性があります</h2>
+        <p className="analysis-failure__lead">
+          {input.origin} から {input.destination} の経路比較は、まだ確定できていません。
+        </p>
+        <div className="analysis-failure__chips" aria-label="再試行のヒント">
+          <span>住所でも試す</span>
+          <span>地図で確定する</span>
+          <span>時間をおいて再試行</span>
+        </div>
+      </div>
+
+      <section className="analysis-failure__panel">
+        <h3>確認できたこと</h3>
+        <ul>
+          {failureSummary.map((item, index) => (
+            <li key={`failure-summary-${index}`}>{item}</li>
+          ))}
+        </ul>
+      </section>
+
+      <section className="analysis-failure__panel">
+        <h3>次に試すこと</h3>
+        <ul>
+          {actions.map((item, index) => (
+            <li key={`failure-action-${index}`}>{item}</li>
+          ))}
+        </ul>
+      </section>
+
+      <details className="analysis-failure__details">
+        <summary>確認メモを表示</summary>
+        <div>{technicalDetails.length > 0 ? formatMessage(technicalDetails.join("\n")) : null}</div>
+      </details>
+    </article>
+  );
+}
+
 const HISTORY_STORAGE_KEY = "routeiq-route-history";
 const HISTORY_LIMIT = 10;
 const DEFAULT_MAP_WIDTH_PERCENT = 62;
@@ -152,7 +239,7 @@ function RouteHistoryContent({
   onDelete,
   onSelect
 }: RouteHistoryContentProps) {
-  return entries.length > 0 ? (
+  return (
     <ol className="route-history__list">
       {entries.map((entry) => (
         <li className="route-history__item" key={entry.id}>
@@ -191,8 +278,6 @@ function RouteHistoryContent({
         </li>
       ))}
     </ol>
-  ) : (
-    <p className="route-history__empty">比較した条件がここに残ります。</p>
   );
 }
 
@@ -248,6 +333,8 @@ function RouteHistoryPanel({
   onDelete,
   onSelect
 }: RouteHistoryPanelProps) {
+  if (entries.length === 0) return null;
+
   if (compact) {
     return (
       <details className="route-history route-history--compact">
@@ -476,14 +563,24 @@ export function RouteComparisonPage({ isDarkMode, onToggleTheme }: RouteComparis
               </div>
             ) : (
               <div className="result-dashboard result-dashboard--fallback">
+                {analysis.apiFailures.length > 0 ? (
+                  <AnalysisFailureState
+                    input={analysis.input}
+                    apiFailures={analysis.apiFailures}
+                    answer={analysis.answer}
+                  />
+                ) : (
+                  <article className="result-answer" aria-label="道路状況の確認内容">
+                    <div>{formatMessage(analysis.answer)}</div>
+                  </article>
+                )}
                 <GoogleRouteMap input={analysis.input} />
-                <article className="result-answer" aria-label="道路状況の確認内容">
-                  <div>{formatMessage(analysis.answer)}</div>
-                </article>
               </div>
             )
           ) : (
-            <section className="empty-state">
+            <section
+              className={`empty-state${isSidebarOpen ? " empty-state--with-sidebar" : ""}`}
+            >
               <div className="empty-state__illustration" aria-hidden="true">
                 <div className="empty-state__icon-group">
                   <div className="empty-state__icon empty-state__icon--pin">
@@ -496,11 +593,16 @@ export function RouteComparisonPage({ isDarkMode, onToggleTheme }: RouteComparis
                 </div>
               </div>
               <div className="empty-state__content">
-                <h2>ルートを比較してみましょう</h2>
+                <h2>まずは条件を入れて比較しましょう</h2>
                 <p className="empty-state__description">
-                  出発地と目的地を入力すると、高速道路と一般道の<br />
-                  <strong>所要時間・料金・ガソリン代</strong>をまとめて比較できます
+                  出発地と目的地を入力すると、<strong>おすすめルート・時間差・費用差</strong>
+                  を先に整理して表示します。
                 </p>
+                <div className="empty-state__tips" aria-label="比較の流れ">
+                  <span>1. 出発地を入れる</span>
+                  <span>2. 目的地を入れる</span>
+                  <span>3. 比較して判断する</span>
+                </div>
                 {!isSidebarOpen ? (
                   <button
                     type="button"

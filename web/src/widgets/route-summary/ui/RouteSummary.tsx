@@ -12,6 +12,21 @@ interface RouteSummaryProps {
   result: CompareRoutesResult;
 }
 
+function buildRecommendationLead(result: CompareRoutesResult) {
+  const timeDifference = formatMinutes(result.comparison.timeDifferenceMinutes);
+  const costDifference = formatYen(result.comparison.costDifferenceYen);
+
+  if (result.recommendedRoute === "expressway") {
+    return `今回は高速優先がおすすめです。一般道より ${timeDifference} 早く、追加費用は ${costDifference} です。`;
+  }
+
+  if (result.comparison.timeDifferenceMinutes > 0) {
+    return `今回は一般道がおすすめです。高速優先でも短縮は ${timeDifference} で、${costDifference} 余計にかかります。`;
+  }
+
+  return `今回は一般道がおすすめです。所要時間差がほぼなく、${costDifference} の追加費用を避けられます。`;
+}
+
 function ListBlock({
   title,
   items,
@@ -72,18 +87,34 @@ function RouteOption({
 
 export function RouteSummary({ result }: RouteSummaryProps) {
   const hasApiFailures = result.apiFailures.length > 0;
+  const recommendationLead = buildRecommendationLead(result);
+  const recommendedLabel = result.recommendedRoute === "expressway" ? "高速優先" : "一般道";
 
   return (
     <div className="summary-stack">
       <section className="recommendation-band">
         <div>
+          <p className="recommendation-band__eyebrow">おすすめの判断</p>
           <h2>
             <Zap size={15} aria-hidden="true" className="recommendation-band__icon" />
-            {result.recommendedRoute === "expressway"
-              ? "高速優先ルート"
-              : "一般道ルート"}
+            {recommendedLabel}で進むのが良さそうです
           </h2>
+          <p className="recommendation-band__lead">{recommendationLead}</p>
           <span>{result.recommendationReason}</span>
+        </div>
+        <div className="recommendation-band__metrics" aria-label="判断の要点">
+          <div>
+            <span>おすすめ</span>
+            <strong>{recommendedLabel}</strong>
+          </div>
+          <div>
+            <span>時間差</span>
+            <strong>{formatMinutes(result.comparison.timeDifferenceMinutes)}</strong>
+          </div>
+          <div>
+            <span>追加費用</span>
+            <strong>{formatYen(result.comparison.costDifferenceYen)}</strong>
+          </div>
         </div>
       </section>
 
@@ -101,6 +132,10 @@ export function RouteSummary({ result }: RouteSummaryProps) {
       </section>
 
       <section className="comparison-panel" aria-label="比較メトリクス">
+        <h3>判断の目安</h3>
+        <p className="comparison-panel__lead">
+          時間短縮に対してどれだけ費用差があるかを先に確認すると、意思決定が速くなります。
+        </p>
         <div className="comparison-grid">
           <Metric
             label="高速優先の短縮時間"
@@ -125,32 +160,26 @@ export function RouteSummary({ result }: RouteSummaryProps) {
         </div>
       </section>
 
-      <details className="route-detail-disclosure">
-        <summary>詳細な内訳</summary>
-        <div className="route-detail-disclosure__content">
-          <div className="route-grid">
-            <RouteCard
-              routeType="expressway"
-              route={result.expresswayRoute}
-              recommended={result.recommendedRoute === "expressway"}
-            />
-            <RouteCard
-              routeType="local"
-              route={result.localRoute}
-              recommended={result.recommendedRoute === "local"}
-            />
-          </div>
-          {hasApiFailures ? (
-            <div className="list-grid">
-              <ListBlock
-                title="API取得に失敗した項目"
-                items={result.apiFailures}
-                icon={<AlertTriangle size={16} aria-hidden="true" />}
-              />
-            </div>
-          ) : null}
-        </div>
-      </details>
+      <div className="route-grid" aria-label="各ルートの詳細">
+        <RouteCard
+          routeType="expressway"
+          route={result.expresswayRoute}
+          recommended={result.recommendedRoute === "expressway"}
+        />
+        <RouteCard
+          routeType="local"
+          route={result.localRoute}
+          recommended={result.recommendedRoute === "local"}
+        />
+      </div>
+
+      {hasApiFailures ? (
+        <ListBlock
+          title="API取得に失敗した項目"
+          items={result.apiFailures}
+          icon={<AlertTriangle size={16} aria-hidden="true" />}
+        />
+      ) : null}
     </div>
   );
 }
