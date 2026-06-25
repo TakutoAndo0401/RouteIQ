@@ -130,6 +130,9 @@ function AnalysisFailureState({
 
 const HISTORY_STORAGE_KEY = "routeiq-route-history";
 const HISTORY_LIMIT = 10;
+const HISTORY_CLEAR_LABEL = "すべて削除";
+const HISTORY_CLEAR_ARIA_LABEL = "検索履歴をすべて削除";
+const HISTORY_DELETE_ENTRY_LABEL = "この履歴を削除";
 const DEFAULT_MAP_WIDTH_PERCENT = 62;
 const MIN_MAP_WIDTH_PERCENT = 44;
 const MAX_MAP_WIDTH_PERCENT = 74;
@@ -298,7 +301,7 @@ function RouteHistoryContent({
             className="route-history__delete"
             disabled={disabled}
             aria-label={`${entry.input.origin} から ${entry.input.destination} の履歴を削除`}
-            title="履歴を削除"
+            title={HISTORY_DELETE_ENTRY_LABEL}
             onClick={() => onDelete(entry.id)}
           >
             <Trash2 size={15} aria-hidden="true" />
@@ -326,8 +329,14 @@ function RouteHistoryActions({
 
   return (
     <div className="route-history__actions">
-      <button type="button" disabled={disabled} onClick={onClear}>
-        全削除
+      <button
+        type="button"
+        disabled={disabled}
+        aria-label={HISTORY_CLEAR_ARIA_LABEL}
+        title={HISTORY_CLEAR_ARIA_LABEL}
+        onClick={onClear}
+      >
+        {HISTORY_CLEAR_LABEL}
       </button>
     </div>
   );
