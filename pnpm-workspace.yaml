@@ -2,3 +2,7 @@ packages:
   - packages/*
   - server
   - web
+allowBuilds:
+  esbuild: true
+minimumReleaseAgeExclude:
+  - '@types/node@26.0.1'

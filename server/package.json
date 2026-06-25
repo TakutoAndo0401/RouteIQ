@@ -14,10 +14,10 @@
   },
   "dependencies": {
     "@routeiq/contracts": "workspace:*",
-    "dotenv": "^16.6.1",
-    "zod": "^3.25.76"
+    "dotenv": "^17.4.2",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
-    "tsx": "^4.20.6"
+    "tsx": "^4.22.4"
   }
 }
