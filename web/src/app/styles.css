@@ -107,7 +107,7 @@
   --routeiq-panel-muted: color-mix(in srgb, var(--lk-surfacecontainer, #1d2029) 86%, #152033);
   --routeiq-border: color-mix(in srgb, var(--lk-outlinevariant, #46464f) 82%, #0b1220);
   --routeiq-border-strong: color-mix(in srgb, var(--lk-outline, #929099) 56%, #0b1220);
-  --routeiq-muted: color-mix(in srgb, var(--lk-onsurfacevariant, #c8c6ce) 78%, #667085);
+  --routeiq-muted: color-mix(in srgb, var(--lk-onsurfacevariant, #c8c6ce) 92%, #dbe1ff);
   --routeiq-accent: #6fdcbf;
   --routeiq-accent-soft: #133d36;
   --routeiq-danger: #ff9da7;
@@ -221,7 +221,8 @@ select {
   justify-content: space-between;
   min-height: 80px;
   margin-bottom: 0;
-  padding: var(--routeiq-space-sm) clamp(var(--routeiq-space-sm), 3vw, var(--routeiq-space-lg));
+  padding: var(--routeiq-space-sm) clamp(var(--routeiq-space-sm), 3vw, var(--routeiq-space-lg))
+    var(--routeiq-space-sm) 0;
   background:
     linear-gradient(90deg, color-mix(in srgb, var(--routeiq-primary-soft) 18%, transparent), transparent 60%),
     color-mix(in srgb, var(--routeiq-page) 84%, transparent);
@@ -232,7 +233,7 @@ select {
 .app-header__left {
   display: flex;
   align-items: center;
-  gap: var(--routeiq-space-xs);
+  gap: 0;
   min-width: 0;
 }
 
@@ -243,6 +244,7 @@ select {
   justify-content: center;
   width: 48px;
   height: 48px;
+  margin: 0 12px;
   padding: 0;
   color: var(--routeiq-primary);
   background: color-mix(in srgb, var(--routeiq-primary-soft) 74%, var(--routeiq-panel));
@@ -382,6 +384,7 @@ label,
 }
 
 .form-field > span:first-child,
+.form-field__label,
 label > span:first-child,
 fieldset legend {
   color: color-mix(in srgb, var(--routeiq-muted) 92%, var(--routeiq-text));
@@ -406,6 +409,11 @@ label em,
   font-weight: 650;
   line-height: 1.5;
   text-wrap: pretty;
+}
+
+.form-field__label {
+  display: inline-flex;
+  width: fit-content;
 }
 
 .form-field__hint--loading {
@@ -627,18 +635,44 @@ input[aria-invalid="true"],
 
 .form-details {
   min-width: 0;
-  background: var(--routeiq-panel-muted);
+  margin-block: var(--routeiq-space-xs) var(--routeiq-space-sm);
+  background: transparent;
   border: 0;
   border-radius: var(--routeiq-radius-md);
 }
 
 .form-details summary {
-  min-height: 44px;
-  padding: 11px var(--routeiq-space-xs);
+  display: flex;
+  align-items: center;
+  min-height: 56px;
+  padding: 0 var(--routeiq-space-sm);
   color: var(--routeiq-text);
+  background: color-mix(in srgb, var(--routeiq-panel-muted) 58%, transparent);
+  border: 1px solid transparent;
+  border-radius: var(--routeiq-radius-sm);
   cursor: pointer;
   font-size: 0.875rem;
   font-weight: 800;
+  list-style: none;
+  transition:
+    background-color 140ms ease,
+    border-color 140ms ease,
+    box-shadow 140ms ease;
+}
+
+.form-details summary::-webkit-details-marker {
+  display: none;
+}
+
+.form-details summary:hover {
+  background: color-mix(in srgb, var(--routeiq-accent-soft) 40%, var(--routeiq-panel-muted));
+  border-color: color-mix(in srgb, var(--routeiq-accent) 18%, transparent);
+}
+
+.form-details[open] summary {
+  background: color-mix(in srgb, var(--routeiq-panel-muted) 86%, var(--routeiq-panel));
+  border-color: color-mix(in srgb, var(--routeiq-border-strong) 22%, transparent);
+  border-radius: var(--routeiq-radius-sm) var(--routeiq-radius-sm) 0 0;
 }
 
 .form-details__summary {
@@ -646,20 +680,32 @@ input[aria-invalid="true"],
   align-items: center;
   justify-content: space-between;
   gap: var(--routeiq-space-xs);
+  width: 100%;
+  min-width: 0;
 }
 
-.form-details__summary-text {
-  color: var(--routeiq-muted);
-  font-size: 0.77rem;
-  font-weight: 700;
-  text-wrap: pretty;
+.form-details__summary-title {
+  line-height: 1.1;
+}
+
+.form-details__chevron {
+  flex: 0 0 auto;
+  color: var(--routeiq-accent);
+  stroke-width: 2.35;
+  transition: transform 140ms ease;
+}
+
+.form-details[open] .form-details__chevron {
+  transform: rotate(180deg);
 }
 
 .form-details__content {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--routeiq-space-sm);
-  padding: 0 var(--routeiq-space-xs) var(--routeiq-space-xs);
+  padding: var(--routeiq-space-sm);
+  background: var(--routeiq-panel-muted);
+  border-radius: 0 0 var(--routeiq-radius-sm) var(--routeiq-radius-sm);
 }
 
 .form-details__content .fuel-average-panel {
@@ -973,6 +1019,17 @@ select:disabled {
   opacity: 0.62;
 }
 
+.location-picker__actions .primary-button:disabled {
+  color: color-mix(in srgb, var(--routeiq-muted) 86%, var(--routeiq-text));
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--routeiq-panel-muted) 92%, transparent), transparent),
+    color-mix(in srgb, var(--routeiq-panel-muted) 78%, var(--routeiq-panel));
+  border: 1px solid var(--routeiq-border-strong);
+  box-shadow: none;
+  opacity: 1;
+  filter: none;
+}
+
 .empty-state,
 .error-banner {
   padding: var(--routeiq-space-sm);
@@ -1089,8 +1146,9 @@ select:disabled {
 
 .empty-state__tips span {
   padding: 6px 10px;
-  color: var(--routeiq-muted);
+  color: color-mix(in srgb, var(--routeiq-muted) 72%, var(--routeiq-text));
   background: color-mix(in srgb, var(--routeiq-accent-soft) 44%, var(--routeiq-panel-muted));
+  border: 1px solid color-mix(in srgb, var(--routeiq-accent) 12%, transparent);
   border-radius: 999px;
   font-size: 0.82rem;
   font-weight: 700;
@@ -1587,7 +1645,7 @@ select:disabled {
 
 .result-dashboard--fallback {
   grid-template-columns: minmax(320px, 0.96fr) minmax(420px, 1.24fr);
-  min-height: calc(100vh - 112px);
+  align-items: start;
 }
 
 .result-pane__busy {
@@ -1637,6 +1695,7 @@ select:disabled {
   display: grid;
   gap: var(--routeiq-space-sm);
   align-content: start;
+  align-self: start;
   padding: var(--routeiq-space-sm);
   background:
     linear-gradient(
@@ -1648,6 +1707,16 @@ select:disabled {
   border-radius: var(--routeiq-radius-md);
   box-shadow: var(--routeiq-shadow-panel);
   animation: routeiq-panel-in 220ms ease-out both;
+}
+
+.analysis-failure--map-available {
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--lk-warningcontainer, #ffdea9) 36%, var(--routeiq-panel)),
+      color-mix(in srgb, var(--routeiq-panel) 92%, #ffffff)
+    );
+  border-color: color-mix(in srgb, var(--routeiq-warning, #7d5800) 20%, var(--routeiq-border));
 }
 
 .analysis-failure__hero {
@@ -1680,19 +1749,32 @@ select:disabled {
   text-wrap: pretty;
 }
 
-.analysis-failure__chips {
+.analysis-failure__actions {
   display: flex;
   flex-wrap: wrap;
   gap: var(--routeiq-space-2xs);
 }
 
-.analysis-failure__chips span {
+.analysis-failure__actions button {
+  min-height: 32px;
   padding: 6px 10px;
-  color: color-mix(in srgb, var(--routeiq-error, #d33b4c) 84%, var(--routeiq-text));
-  background: color-mix(in srgb, var(--lk-errorcontainer, #ffd9dc) 82%, #ffffff);
+  color: color-mix(in srgb, var(--routeiq-warning, #7d5800) 84%, var(--routeiq-text));
+  background: color-mix(in srgb, var(--lk-warningcontainer, #ffdea9) 72%, var(--routeiq-panel));
+  border: 1px solid color-mix(in srgb, var(--routeiq-warning, #7d5800) 16%, transparent);
   border-radius: 999px;
+  cursor: pointer;
   font-size: 0.82rem;
   font-weight: 800;
+  transition:
+    background-color 140ms ease,
+    border-color 140ms ease,
+    transform 140ms ease;
+}
+
+.analysis-failure__actions button:hover {
+  background: color-mix(in srgb, var(--lk-warningcontainer, #ffdea9) 90%, var(--routeiq-panel));
+  border-color: color-mix(in srgb, var(--routeiq-warning, #7d5800) 30%, transparent);
+  transform: translateY(-1px);
 }
 
 .analysis-failure__panel {
@@ -1976,20 +2058,22 @@ select:disabled {
 .recommendation-band__lead {
   margin: 0 0 6px;
   color: var(--routeiq-text);
-  max-width: 48ch;
+  max-width: none;
   font-size: 0.95rem;
   font-weight: 750;
   line-height: 1.65;
-  text-wrap: balance;
+  text-wrap: normal;
+  white-space: normal;
 }
 
 .recommendation-band__reason {
   display: block;
-  max-width: 52ch;
+  max-width: none;
   color: var(--routeiq-muted);
   font-size: 0.88rem;
   line-height: 1.6;
-  text-wrap: balance;
+  text-wrap: normal;
+  white-space: normal;
 }
 
 .recommendation-band__metrics {
@@ -2319,7 +2403,11 @@ a:focus-visible {
 
   .app-header {
     min-height: 72px;
-    padding: var(--routeiq-space-xs) var(--routeiq-space-sm);
+    padding: var(--routeiq-space-xs) var(--routeiq-space-sm) var(--routeiq-space-xs) 0;
+  }
+
+  .app-header__menu-toggle {
+    margin: 0 8px;
   }
 
   .theme-toggle {

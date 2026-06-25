@@ -1,4 +1,12 @@
-import { AlertCircle, Calculator, LocateFixed, MapPinned, MapPin, X } from "lucide-react";
+import {
+  AlertCircle,
+  Calculator,
+  ChevronDown,
+  LocateFixed,
+  MapPinned,
+  MapPin,
+  X
+} from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import type { RouteAnalysisRequest } from "../../../entities/route/model";
@@ -13,7 +21,11 @@ import { LocationPickerMap } from "./LocationPickerMap";
 
 interface RouteFormProps {
   disabled?: boolean;
+  focusRequest?: FormFocusRequest | null;
   initialValues?: RouteAnalysisRequest | null;
+  mapPickerRequest?: FormMapPickerRequest | null;
+  onFocusRequestConsumed?: () => void;
+  onMapPickerRequestConsumed?: () => void;
   onSubmit: (input: RouteAnalysisRequest) => void;
 }
 
@@ -21,11 +33,28 @@ type FormErrors = Partial<
   Record<"origin" | "destination" | "fuelEfficiency" | "fuelPrice" | "currentLocation", string>
 >;
 type MapPickerTarget = "origin" | "destination";
+type FormFocusTarget = "origin" | "destination";
+type FormFocusRequest = {
+  target: FormFocusTarget;
+  token: number;
+};
+type FormMapPickerRequest = {
+  target: MapPickerTarget;
+  token: number;
+};
 
 const VEHICLE_TYPES = ["普通車", "軽自動車", "中型車", "大型車"] as const;
 const DEFAULT_QUESTION = "現在の道路状況を確認して";
 
-export function RouteForm({ disabled = false, initialValues = null, onSubmit }: RouteFormProps) {
+export function RouteForm({
+  disabled = false,
+  focusRequest = null,
+  initialValues = null,
+  mapPickerRequest = null,
+  onFocusRequestConsumed,
+  onMapPickerRequestConsumed,
+  onSubmit
+}: RouteFormProps) {
   const [origin, setOrigin] = useState("");
   const [destination, setDestination] = useState("");
   const [fuelEfficiency, setFuelEfficiency] = useState("15");
@@ -37,14 +66,23 @@ export function RouteForm({ disabled = false, initialValues = null, onSubmit }: 
   const [isMapPickerOpen, setIsMapPickerOpen] = useState(false);
   const [mapPickerTarget, setMapPickerTarget] = useState<MapPickerTarget>("origin");
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+  const originInputRef = useRef<HTMLInputElement | null>(null);
+  const destinationInputRef = useRef<HTMLInputElement | null>(null);
+  const fuelEfficiencyInputRef = useRef<HTMLInputElement | null>(null);
+  const fuelPriceInputRef = useRef<HTMLInputElement | null>(null);
   const mapPickerDialogRef = useRef<HTMLElement | null>(null);
   const closeMapPickerButtonRef = useRef<HTMLButtonElement | null>(null);
   const mapPickerReturnFocusRef = useRef<HTMLElement | null>(null);
   const originDescribedBy =
     [
+      "origin-hint",
       errors.origin ? "origin-error" : undefined,
       errors.currentLocation ? "current-location-error" : undefined
     ]
+      .filter(Boolean)
+      .join(" ") || undefined;
+  const destinationDescribedBy =
+    ["destination-hint", errors.destination ? "destination-error" : undefined]
       .filter(Boolean)
       .join(" ") || undefined;
 
@@ -69,10 +107,6 @@ export function RouteForm({ disabled = false, initialValues = null, onSubmit }: 
     }
   }, [errors.fuelEfficiency, errors.fuelPrice]);
 
-  const detailSummary = `${vehicleType}・${fuelEfficiency || "15"}km/L・${
-    fuelPrice ? `${fuelPrice}円/L` : "全国平均"
-  }`;
-
   const updateOrigin = (value: string) => {
     setOrigin(value);
     if (errors.origin || errors.currentLocation) {
@@ -89,6 +123,7 @@ export function RouteForm({ disabled = false, initialValues = null, onSubmit }: 
   };
 
   const openMapPicker = (target: MapPickerTarget) => {
+    if (disabled) return;
     mapPickerReturnFocusRef.current =
       document.activeElement instanceof HTMLElement ? document.activeElement : null;
     setMapPickerTarget(target);
@@ -98,6 +133,28 @@ export function RouteForm({ disabled = false, initialValues = null, onSubmit }: 
   const closeMapPicker = () => {
     setIsMapPickerOpen(false);
   };
+
+  useEffect(() => {
+    if (!focusRequest) return;
+
+    const input =
+      focusRequest.target === "origin" ? originInputRef.current : destinationInputRef.current;
+    requestAnimationFrame(() => {
+      input?.focus();
+      input?.select();
+      onFocusRequestConsumed?.();
+    });
+  }, [focusRequest, onFocusRequestConsumed]);
+
+  useEffect(() => {
+    if (!mapPickerRequest) return;
+
+    const target = mapPickerRequest.target;
+    requestAnimationFrame(() => {
+      openMapPicker(target);
+      onMapPickerRequestConsumed?.();
+    });
+  }, [mapPickerRequest, onMapPickerRequestConsumed]);
 
   const useCurrentLocation = () => {
     if (!navigator.geolocation) {
@@ -225,6 +282,27 @@ export function RouteForm({ disabled = false, initialValues = null, onSubmit }: 
     return nextErrors;
   };
 
+  const focusFirstError = (nextErrors: FormErrors) => {
+    const target =
+      nextErrors.origin || nextErrors.currentLocation
+        ? originInputRef.current
+        : nextErrors.destination
+          ? destinationInputRef.current
+          : nextErrors.fuelEfficiency
+            ? fuelEfficiencyInputRef.current
+            : nextErrors.fuelPrice
+              ? fuelPriceInputRef.current
+              : null;
+
+    if (nextErrors.fuelEfficiency || nextErrors.fuelPrice) {
+      setIsDetailsOpen(true);
+    }
+
+    requestAnimationFrame(() => {
+      target?.focus();
+    });
+  };
+
   return (
     <form
       className="route-form"
@@ -236,7 +314,10 @@ export function RouteForm({ disabled = false, initialValues = null, onSubmit }: 
         const trimmedDestination = destination.trim();
         const nextErrors = validate();
         setErrors(nextErrors);
-        if (Object.keys(nextErrors).length > 0) return;
+        if (Object.keys(nextErrors).length > 0) {
+          focusFirstError(nextErrors);
+          return;
+        }
         const input: RouteAnalysisRequest = {
           origin: trimmedOrigin,
           destination: trimmedDestination,
@@ -251,11 +332,15 @@ export function RouteForm({ disabled = false, initialValues = null, onSubmit }: 
     >
       <div className="form-grid">
         <div className="form-field form-field--location">
-          <span id="origin-label">出発地</span>
+          <label className="form-field__label" id="origin-label" htmlFor="routeiq-origin-input">
+            出発地
+          </label>
           <div className="input-shell input-shell--location">
             <div className="input-shell__main">
               <MapPin size={16} aria-hidden="true" />
               <input
+                ref={originInputRef}
+                id="routeiq-origin-input"
                 name="routeiq-origin"
                 value={origin}
                 onChange={(event) => updateOrigin(event.target.value)}
@@ -295,7 +380,9 @@ export function RouteForm({ disabled = false, initialValues = null, onSubmit }: 
               </button>
             </div>
           </div>
-          <small className="form-field__hint">IC名、住所、緯度経度で指定できます。</small>
+          <small className="form-field__hint" id="origin-hint">
+            IC名、住所、緯度経度で指定できます。
+          </small>
           {isResolvingCurrentLocation ? (
             <small className="form-field__hint form-field__hint--loading">
               <LoadingSpinner label="現在地を確認中" size={14} />
@@ -311,11 +398,19 @@ export function RouteForm({ disabled = false, initialValues = null, onSubmit }: 
           ) : null}
         </div>
         <div className="form-field form-field--location">
-          <span id="destination-label">目的地</span>
+          <label
+            className="form-field__label"
+            id="destination-label"
+            htmlFor="routeiq-destination-input"
+          >
+            目的地
+          </label>
           <div className="input-shell input-shell--location">
             <div className="input-shell__main">
               <MapPin size={16} aria-hidden="true" />
               <input
+                ref={destinationInputRef}
+                id="routeiq-destination-input"
                 name="routeiq-destination"
                 value={destination}
                 onChange={(event) => updateDestination(event.target.value)}
@@ -328,7 +423,7 @@ export function RouteForm({ disabled = false, initialValues = null, onSubmit }: 
                 spellCheck={false}
                 aria-labelledby="destination-label"
                 aria-invalid={Boolean(errors.destination)}
-                aria-describedby={errors.destination ? "destination-error" : undefined}
+                aria-describedby={destinationDescribedBy}
               />
             </div>
             <div className="input-shell__actions">
@@ -345,6 +440,9 @@ export function RouteForm({ disabled = false, initialValues = null, onSubmit }: 
               </button>
             </div>
           </div>
+          <small className="form-field__hint" id="destination-hint">
+            IC名、住所、緯度経度で指定できます。
+          </small>
           {errors.destination ? <em id="destination-error">{errors.destination}</em> : null}
         </div>
         <details
@@ -354,14 +452,15 @@ export function RouteForm({ disabled = false, initialValues = null, onSubmit }: 
         >
           <summary>
             <span className="form-details__summary">
-              <span>詳細条件</span>
-              <span className="form-details__summary-text">{detailSummary}</span>
+              <span className="form-details__summary-title">詳細条件</span>
+              <ChevronDown className="form-details__chevron" size={18} aria-hidden="true" />
             </span>
           </summary>
           <div className="form-details__content">
             <label>
               <span>燃費 km/L</span>
               <input
+                ref={fuelEfficiencyInputRef}
                 type="number"
                 min="1"
                 step="0.1"
@@ -379,6 +478,7 @@ export function RouteForm({ disabled = false, initialValues = null, onSubmit }: 
             <label>
               <span>ガソリン円/L</span>
               <input
+                ref={fuelPriceInputRef}
                 type="number"
                 min="0"
                 step="1"

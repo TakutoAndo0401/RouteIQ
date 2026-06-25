@@ -58,11 +58,17 @@ function buildFailureActions(input: RouteAnalysisRequest) {
 function AnalysisFailureState({
   input,
   apiFailures,
-  answer
+  answer,
+  onEditAddress,
+  onPickOnMap,
+  onRetry
 }: {
   input: RouteAnalysisRequest;
   apiFailures: string[];
   answer: string;
+  onEditAddress: (input: RouteAnalysisRequest) => void;
+  onPickOnMap: (input: RouteAnalysisRequest) => void;
+  onRetry: (input: RouteAnalysisRequest) => Promise<void>;
 }) {
   const failureSummary = Array.from(new Set(apiFailures.map(summarizeFailureMessage)));
   const actions = buildFailureActions(input);
@@ -72,17 +78,27 @@ function AnalysisFailureState({
     .filter(Boolean);
 
   return (
-    <article className="analysis-failure" aria-label="比較結果を取得できなかった理由">
+    <article
+      className="analysis-failure analysis-failure--map-available"
+      aria-label="アプリ内比較を確定できなかった理由"
+    >
       <div className="analysis-failure__hero">
-        <p className="analysis-failure__eyebrow">比較結果を取得できませんでした</p>
-        <h2>入力条件を少し直すと取得できる可能性があります</h2>
+        <p className="analysis-failure__eyebrow">アプリ内比較は未確定です</p>
+        <h2>地図で経路を確認しながら入力を整えてください</h2>
         <p className="analysis-failure__lead">
-          {input.origin} から {input.destination} の経路比較は、まだ確定できていません。
+          {input.origin} から {input.destination} の時間差・費用差は確定できていません。
+          右側のGoogleマップでルートの目安を確認できます。
         </p>
-        <div className="analysis-failure__chips" aria-label="再試行のヒント">
-          <span>住所でも試す</span>
-          <span>地図で確定する</span>
-          <span>時間をおいて再試行</span>
+        <div className="analysis-failure__actions" aria-label="次の操作">
+          <button type="button" onClick={() => onEditAddress(input)}>
+            住所でも試す
+          </button>
+          <button type="button" onClick={() => onPickOnMap(input)}>
+            地図で確定する
+          </button>
+          <button type="button" onClick={() => void onRetry(input)}>
+            時間をおいて再試行
+          </button>
         </div>
       </div>
 
@@ -124,6 +140,18 @@ type RouteHistoryEntry = {
   key: string;
   searchedAt: string;
   input: RouteAnalysisRequest;
+};
+
+type FormRequestTarget = "origin" | "destination";
+
+type FormFocusRequest = {
+  target: FormRequestTarget;
+  token: number;
+};
+
+type FormMapPickerRequest = {
+  target: FormRequestTarget;
+  token: number;
 };
 
 function isRouteAnalysisRequest(value: unknown): value is RouteAnalysisRequest {
@@ -380,11 +408,16 @@ export function RouteComparisonPage({ isDarkMode, onToggleTheme }: RouteComparis
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isCompactHistory, setIsCompactHistory] = useState(isMobileView);
   const [selectedFormDraft, setSelectedFormDraft] = useState<RouteAnalysisRequest | null>(null);
+  const [formFocusRequest, setFormFocusRequest] = useState<FormFocusRequest | null>(null);
+  const [formMapPickerRequest, setFormMapPickerRequest] = useState<FormMapPickerRequest | null>(
+    null
+  );
   const [routeHistory, setRouteHistory] = useState<RouteHistoryEntry[]>(loadRouteHistory);
   const [mapWidthPercent, setMapWidthPercent] = useState(DEFAULT_MAP_WIDTH_PERCENT);
   const dashboardRef = useRef<HTMLDivElement | null>(null);
   const resultPaneRef = useRef<HTMLElement | null>(null);
   const isResizingMap = useRef(false);
+  const formRequestToken = useRef(0);
 
   useEffect(() => {
     const mediaQuery = window.matchMedia(MOBILE_VIEW_QUERY);
@@ -441,6 +474,44 @@ export function RouteComparisonPage({ isDarkMode, onToggleTheme }: RouteComparis
   const restoreHistory = useCallback((input: RouteAnalysisRequest) => {
     setSelectedFormDraft({ ...input });
   }, []);
+
+  const clearFormFocusRequest = useCallback(() => {
+    setFormFocusRequest(null);
+  }, []);
+
+  const clearFormMapPickerRequest = useCallback(() => {
+    setFormMapPickerRequest(null);
+  }, []);
+
+  const nextFormRequestToken = useCallback(() => {
+    formRequestToken.current += 1;
+    return formRequestToken.current;
+  }, []);
+
+  const editAsAddress = useCallback(
+    (input: RouteAnalysisRequest) => {
+      setSelectedFormDraft({ ...input });
+      setIsSidebarOpen(true);
+      setFormFocusRequest({ target: "origin", token: nextFormRequestToken() });
+    },
+    [nextFormRequestToken]
+  );
+
+  const pickOnMap = useCallback(
+    (input: RouteAnalysisRequest) => {
+      setSelectedFormDraft({ ...input });
+      setIsSidebarOpen(true);
+      setFormMapPickerRequest({ target: "origin", token: nextFormRequestToken() });
+    },
+    [nextFormRequestToken]
+  );
+
+  const retryAnalysis = useCallback(
+    async (input: RouteAnalysisRequest) => {
+      await handleSubmit(input);
+    },
+    [handleSubmit]
+  );
 
   const updateMapWidth = useCallback((clientX: number) => {
     const dashboard = dashboardRef.current;
@@ -514,7 +585,15 @@ export function RouteComparisonPage({ isDarkMode, onToggleTheme }: RouteComparis
             <div className="condition-pane__header">
               <h2>条件入力</h2>
             </div>
-            <RouteForm disabled={busy} initialValues={selectedFormDraft} onSubmit={handleSubmit} />
+            <RouteForm
+              disabled={busy}
+              focusRequest={formFocusRequest}
+              initialValues={selectedFormDraft}
+              mapPickerRequest={formMapPickerRequest}
+              onFocusRequestConsumed={clearFormFocusRequest}
+              onMapPickerRequestConsumed={clearFormMapPickerRequest}
+              onSubmit={handleSubmit}
+            />
             <RouteHistoryPanel
               compact={isCompactHistory}
               disabled={busy}
@@ -568,6 +647,9 @@ export function RouteComparisonPage({ isDarkMode, onToggleTheme }: RouteComparis
                     input={analysis.input}
                     apiFailures={analysis.apiFailures}
                     answer={analysis.answer}
+                    onEditAddress={editAsAddress}
+                    onPickOnMap={pickOnMap}
+                    onRetry={retryAnalysis}
                   />
                 ) : (
                   <article className="result-answer" aria-label="道路状況の確認内容">
