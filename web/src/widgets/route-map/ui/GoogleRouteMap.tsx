@@ -1,6 +1,7 @@
 import { ArrowRight, ExternalLink, MapPinned } from "lucide-react";
 import { useEffect, useState } from "react";
 import type { RouteInput } from "../../../entities/route/model";
+import { LoadingSpinner } from "../../../shared/ui";
 import {
   getClientConfig,
   getGoogleMapsBrowserApiKey
@@ -40,9 +41,10 @@ function formatLocationLabel(value: string): string {
 }
 
 export function GoogleRouteMap({ input }: GoogleRouteMapProps) {
-  const [apiKey, setApiKey] = useState<string | null>(null);
+  const [apiKey, setApiKey] = useState<string | null | undefined>(undefined);
   const directionsUrl = buildDirectionsUrl(input);
-  const embedUrl = buildEmbedUrl(input, apiKey);
+  const embedUrl = apiKey ? buildEmbedUrl(input, apiKey) : null;
+  const isConfigLoading = apiKey === undefined;
   const originLabel = formatLocationLabel(input.origin);
   const destinationLabel = formatLocationLabel(input.destination);
 
@@ -96,8 +98,16 @@ export function GoogleRouteMap({ input }: GoogleRouteMapProps) {
         />
       ) : (
         <div className="route-map__fallback">
-          <MapPinned size={20} aria-hidden="true" />
-          <span>埋め込み表示には GOOGLE_MAPS_BROWSER_API_KEY と Maps Embed API の有効化が必要です。</span>
+          {isConfigLoading ? (
+            <LoadingSpinner label="地図を読み込み中" size={18} />
+          ) : (
+            <MapPinned size={20} aria-hidden="true" />
+          )}
+          <span>
+            {isConfigLoading
+              ? "地図を読み込んでいます。"
+              : "アプリ内地図を表示できません。Google マップで開いて確認してください。"}
+          </span>
         </div>
       )}
     </section>

@@ -41,20 +41,6 @@ function summarizeFailureMessage(message: string) {
   return "経路比較に必要なデータを取得できませんでした。";
 }
 
-function buildFailureActions(input: RouteAnalysisRequest) {
-  const hasIcsOnly = [input.origin, input.destination].some(
-    (value) => value.includes("IC") || value.includes("インター")
-  );
-
-  return [
-    hasIcsOnly
-      ? "IC 名だけでなく、住所や施設名でもう一度入力する"
-      : "地図から出発地と目的地を選び直す",
-    "地図ボタンから地点を選び、候補を確定してから比較する",
-    "少し時間をおいて再試行する"
-  ];
-}
-
 function AnalysisFailureState({
   input,
   apiFailures,
@@ -71,7 +57,8 @@ function AnalysisFailureState({
   onRetry: (input: RouteAnalysisRequest) => Promise<void>;
 }) {
   const failureSummary = Array.from(new Set(apiFailures.map(summarizeFailureMessage)));
-  const actions = buildFailureActions(input);
+  const failureReason =
+    failureSummary[0] ?? "この条件ではアプリ内比較を確定できませんでした。";
   const technicalDetails = answer
     .split("\n")
     .map((line) => line.trim())
@@ -87,38 +74,20 @@ function AnalysisFailureState({
         <h2>地図で経路を確認しながら入力を整えてください</h2>
         <p className="analysis-failure__lead">
           {input.origin} から {input.destination} の時間差・費用差は確定できていません。
-          右側のGoogleマップでルートの目安を確認できます。
+          {failureReason}
         </p>
         <div className="analysis-failure__actions" aria-label="次の操作">
           <button type="button" onClick={() => onEditAddress(input)}>
-            住所でも試す
+            住所で入力し直す
           </button>
           <button type="button" onClick={() => onPickOnMap(input)}>
-            地図で確定する
+            地図で選ぶ
           </button>
           <button type="button" onClick={() => void onRetry(input)}>
-            時間をおいて再試行
+            再試行
           </button>
         </div>
       </div>
-
-      <section className="analysis-failure__panel">
-        <h3>確認できたこと</h3>
-        <ul>
-          {failureSummary.map((item, index) => (
-            <li key={`failure-summary-${index}`}>{item}</li>
-          ))}
-        </ul>
-      </section>
-
-      <section className="analysis-failure__panel">
-        <h3>次に試すこと</h3>
-        <ul>
-          {actions.map((item, index) => (
-            <li key={`failure-action-${index}`}>{item}</li>
-          ))}
-        </ul>
-      </section>
 
       <details className="analysis-failure__details">
         <summary>確認メモを表示</summary>
@@ -413,7 +382,7 @@ function RouteHistoryPanel({
 }
 
 export function RouteComparisonPage({ isDarkMode, onToggleTheme }: RouteComparisonPageProps) {
-  const { analysis, busy, error, submit } = useRouteAnalysis();
+  const { analysis, busy, error, reset, submit } = useRouteAnalysis();
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isCompactHistory, setIsCompactHistory] = useState(isMobileView);
   const [selectedFormDraft, setSelectedFormDraft] = useState<RouteAnalysisRequest | null>(null);
@@ -482,7 +451,8 @@ export function RouteComparisonPage({ isDarkMode, onToggleTheme }: RouteComparis
 
   const restoreHistory = useCallback((input: RouteAnalysisRequest) => {
     setSelectedFormDraft({ ...input });
-  }, []);
+    reset();
+  }, [reset]);
 
   const clearFormFocusRequest = useCallback(() => {
     setFormFocusRequest(null);
@@ -599,6 +569,7 @@ export function RouteComparisonPage({ isDarkMode, onToggleTheme }: RouteComparis
               focusRequest={formFocusRequest}
               initialValues={selectedFormDraft}
               mapPickerRequest={formMapPickerRequest}
+              onDraftChange={reset}
               onFocusRequestConsumed={clearFormFocusRequest}
               onMapPickerRequestConsumed={clearFormMapPickerRequest}
               onSubmit={handleSubmit}
@@ -684,16 +655,10 @@ export function RouteComparisonPage({ isDarkMode, onToggleTheme }: RouteComparis
                 </div>
               </div>
               <div className="empty-state__content">
-                <h2>まずは条件を入れて比較しましょう</h2>
+                <h2>比較結果はここに表示されます</h2>
                 <p className="empty-state__description">
-                  出発地と目的地を入力すると、<strong>おすすめルート・時間差・費用差</strong>
-                  を先に整理して表示します。
+                  <strong>おすすめルート・時間差・費用差</strong>をまとめます。
                 </p>
-                <div className="empty-state__tips" aria-label="比較の流れ">
-                  <span>1. 出発地を入れる</span>
-                  <span>2. 目的地を入れる</span>
-                  <span>3. 比較して判断する</span>
-                </div>
                 {!isSidebarOpen ? (
                   <button
                     type="button"

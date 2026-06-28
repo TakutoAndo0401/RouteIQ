@@ -14,10 +14,10 @@ export interface MapMouseEvent {
 }
 
 export interface GoogleMap {
-  addListener: (
-    eventName: "click",
-    handler: (event: MapMouseEvent) => void
-  ) => MapsEventListener;
+  addListener: {
+    (eventName: "click", handler: (event: MapMouseEvent) => void): MapsEventListener;
+    (eventName: "tilesloaded", handler: () => void): MapsEventListener;
+  };
   fitBounds: (bounds: GoogleLatLngBounds) => void;
   setCenter: (position: LatLngLiteral) => void;
   setZoom: (zoom: number) => void;

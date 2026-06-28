@@ -7,6 +7,11 @@ export function useRouteAnalysis() {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
+  const reset = useCallback(() => {
+    setAnalysis(null);
+    setError(null);
+  }, []);
+
   const submit = useCallback(async (input: RouteAnalysisRequest) => {
     setBusy(true);
     setError(null);
@@ -26,6 +31,7 @@ export function useRouteAnalysis() {
     analysis,
     busy,
     error,
+    reset,
     submit
   };
 }

@@ -1,4 +1,4 @@
-import { Fuel, Gauge, ReceiptText, Route } from "lucide-react";
+import { Gauge, Route } from "lucide-react";
 import {
   formatDistanceKm,
   formatMinutes,
@@ -44,10 +44,6 @@ export function RouteCard({ routeType, route, recommended }: RouteCardProps) {
       <div className="route-card__traffic">
         <Gauge size={16} aria-hidden="true" />
         <span>{route.trafficSummary}</span>
-      </div>
-      <div className="route-card__icons" aria-hidden="true">
-        <Fuel size={15} />
-        <ReceiptText size={15} />
       </div>
     </article>
   );

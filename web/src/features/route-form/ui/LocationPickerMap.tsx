@@ -12,6 +12,7 @@ import { loadGoogleMaps, reverseGeocode } from "../../../shared/lib/googleMaps";
 import { LoadingSpinner } from "../../../shared/ui";
 
 type PickerTarget = "origin" | "destination";
+type MapLoadState = "loading" | "ready" | "unavailable";
 
 interface LocationPickerMapProps {
   disabled?: boolean;
@@ -45,6 +46,7 @@ export function LocationPickerMap({
   const [status, setStatus] = useState("地図を読み込み中です。");
   const [selectedAddress, setSelectedAddress] = useState<string | null>(null);
   const [isResolvingSelection, setIsResolvingSelection] = useState(false);
+  const [mapLoadState, setMapLoadState] = useState<MapLoadState>("loading");
 
   targetRef.current = target;
   disabledRef.current = disabled;
@@ -55,25 +57,30 @@ export function LocationPickerMap({
   useEffect(() => {
     setSelectedAddress(null);
     setIsResolvingSelection(false);
-  }, [target]);
+    if (mapLoadState === "ready") {
+      setStatus(`${targetLabel}にしたい地点を地図上でクリックしてください。`);
+    }
+  }, [mapLoadState, target, targetLabel]);
 
   useEffect(() => {
     let ignore = false;
     let listener: MapsEventListener | null = null;
+    let tilesListener: MapsEventListener | null = null;
 
-    setStatus("地図を読み込み中です。");
+    setMapLoadState("loading");
+    setStatus("地図を読み込んでいます。");
     getClientConfig()
       .then(async (config) => {
         const apiKey = getGoogleMapsBrowserApiKey(config);
         if (!apiKey) {
-          setStatus("地図選択には GOOGLE_MAPS_BROWSER_API_KEY と Maps JavaScript API が必要です。");
+          setMapLoadState("unavailable");
+          setStatus("地図選択を利用できません。住所または施設名を入力してください。");
           return;
         }
         window.gm_authFailure = () => {
           if (!ignore) {
-            setStatus(
-              "Google Maps API key で地図を表示できません。Maps JavaScript API と Geocoding API の有効化、HTTP referrer 制限を確認してください。"
-            );
+            setMapLoadState("unavailable");
+            setStatus("地図を表示できません。住所または施設名を入力してください。");
           }
         };
         const google = await loadGoogleMaps(apiKey);
@@ -87,9 +94,14 @@ export function LocationPickerMap({
           fullscreenControl: false
         });
         const geocoder = new google.maps.Geocoder();
-        setStatus(
-          `${targetRef.current === "origin" ? "出発地" : "目的地"}にしたい地点を地図上でクリックし、下のボタンで確定してください。`
-        );
+        setStatus("地図を表示しています。");
+        tilesListener = map.addListener("tilesloaded", () => {
+          if (ignore) return;
+          setMapLoadState("ready");
+          setStatus(
+            `${targetRef.current === "origin" ? "出発地" : "目的地"}にしたい地点を地図上でクリックしてください。`
+          );
+        });
 
         listener = map.addListener("click", (event) => {
           const position = event.latLng?.toJSON();
@@ -122,13 +134,10 @@ export function LocationPickerMap({
             });
         });
       })
-      .catch((error: unknown) => {
+      .catch(() => {
         if (!ignore) {
-          setStatus(
-            error instanceof Error && error.message.includes("Google Maps JavaScript API")
-              ? error.message
-              : "地図設定を取得できませんでした。API キーの設定とアプリサーバーの起動状態を確認してください。"
-          );
+          setStatus("地図を表示できません。住所または施設名を入力してください。");
+          setMapLoadState("unavailable");
         }
       });
 
@@ -136,19 +145,35 @@ export function LocationPickerMap({
       ignore = true;
       if (window.gm_authFailure) window.gm_authFailure = undefined;
       listener?.remove();
+      tilesListener?.remove();
     };
   }, [onDestinationChange, onOriginChange, onSelectComplete]);
 
   return (
     <section className="location-picker" aria-label="地図で地点を選択">
-      <div ref={mapNodeRef} className="location-picker__map" />
+      <div className="location-picker__map-shell">
+        <div ref={mapNodeRef} className="location-picker__map" />
+        {mapLoadState !== "ready" ? (
+          <div
+            className={`location-picker__map-status${
+              mapLoadState === "unavailable" ? " location-picker__map-status--unavailable" : ""
+            }`}
+            role="status"
+          >
+            {mapLoadState === "loading" ? <LoadingSpinner label={status} size={18} /> : null}
+            <span>{status}</span>
+          </div>
+        ) : null}
+      </div>
       <div className="location-picker__status" aria-live="polite">
-        <span className="location-picker__status-message">
-          {isLoadingStatus(status) || isResolvingSelection ? (
-            <LoadingSpinner label={status} size={14} />
-          ) : null}
-          <span>{status}</span>
-        </span>
+        {mapLoadState === "ready" || isResolvingSelection ? (
+          <span className="location-picker__status-message">
+            {isLoadingStatus(status) || isResolvingSelection ? (
+              <LoadingSpinner label={status} size={14} />
+            ) : null}
+            <span>{status}</span>
+          </span>
+        ) : null}
         <dl>
           <div>
             <dt>現在</dt>

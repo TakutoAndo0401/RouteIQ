@@ -24,6 +24,7 @@ interface RouteFormProps {
   focusRequest?: FormFocusRequest | null;
   initialValues?: RouteAnalysisRequest | null;
   mapPickerRequest?: FormMapPickerRequest | null;
+  onDraftChange?: () => void;
   onFocusRequestConsumed?: () => void;
   onMapPickerRequestConsumed?: () => void;
   onSubmit: (input: RouteAnalysisRequest) => void;
@@ -51,6 +52,7 @@ export function RouteForm({
   focusRequest = null,
   initialValues = null,
   mapPickerRequest = null,
+  onDraftChange,
   onFocusRequestConsumed,
   onMapPickerRequestConsumed,
   onSubmit
@@ -109,6 +111,7 @@ export function RouteForm({
 
   const updateOrigin = (value: string) => {
     setOrigin(value);
+    onDraftChange?.();
     if (errors.origin || errors.currentLocation) {
       setErrors((current) => ({
         ...current,
@@ -119,6 +122,7 @@ export function RouteForm({
   };
   const updateDestination = (value: string) => {
     setDestination(value);
+    onDraftChange?.();
     if (errors.destination) setErrors((current) => ({ ...current, destination: undefined }));
   };
 
@@ -465,7 +469,10 @@ export function RouteForm({
                 min="1"
                 step="0.1"
                 value={fuelEfficiency}
-                onChange={(event) => setFuelEfficiency(event.target.value)}
+                onChange={(event) => {
+                  setFuelEfficiency(event.target.value);
+                  onDraftChange?.();
+                }}
                 disabled={disabled}
                 required
                 aria-invalid={Boolean(errors.fuelEfficiency)}
@@ -483,7 +490,10 @@ export function RouteForm({
                 min="0"
                 step="1"
                 value={fuelPrice}
-                onChange={(event) => setFuelPrice(event.target.value)}
+                onChange={(event) => {
+                  setFuelPrice(event.target.value);
+                  onDraftChange?.();
+                }}
                 disabled={disabled}
                 placeholder="全国平均を使用"
                 aria-invalid={Boolean(errors.fuelPrice)}
@@ -502,7 +512,10 @@ export function RouteForm({
                       value={type}
                       checked={vehicleType === type}
                       disabled={disabled}
-                      onChange={(event) => setVehicleType(event.target.value)}
+                      onChange={(event) => {
+                        setVehicleType(event.target.value);
+                        onDraftChange?.();
+                      }}
                     />
                     <span>{type}</span>
                   </label>
@@ -521,7 +534,10 @@ export function RouteForm({
                         key={price.label}
                         type="button"
                         disabled={disabled}
-                        onClick={() => setFuelPrice(String(price.value))}
+                        onClick={() => {
+                          setFuelPrice(String(price.value));
+                          onDraftChange?.();
+                        }}
                       >
                         <span>{price.label}</span>
                         <strong>{price.value.toFixed(1)}円/L</strong>

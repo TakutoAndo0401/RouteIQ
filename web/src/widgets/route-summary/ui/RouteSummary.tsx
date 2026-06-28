@@ -1,11 +1,10 @@
-import { AlertTriangle, Clock, TrendingUp, Zap } from "lucide-react";
+import { AlertTriangle, Zap } from "lucide-react";
 import {
   formatYen,
   formatDistanceKm,
   formatMinutes,
   type CompareRoutesResult
 } from "../../../entities/route/model";
-import { Metric } from "../../../shared/ui";
 import { RouteCard } from "./RouteCard";
 
 interface RouteSummaryProps {
@@ -133,35 +132,6 @@ export function RouteSummary({ result }: RouteSummaryProps) {
         />
       </section>
 
-      <section className="comparison-panel" aria-label="比較メトリクス">
-        <h3>判断の目安</h3>
-        <p className="comparison-panel__lead">
-          時間短縮に対する費用差を先に確認すると、意思決定が速くなります。
-        </p>
-        <div className="comparison-grid">
-          <Metric
-            label="高速優先の短縮時間"
-            value={formatMinutes(result.comparison.timeDifferenceMinutes)}
-            tone={result.comparison.timeDifferenceMinutes > 0 ? "good" : "neutral"}
-            icon={<Clock size={15} aria-hidden="true" />}
-          />
-          <Metric
-            label="高速優先の追加費用"
-            value={formatYen(result.comparison.costDifferenceYen)}
-            tone="warn"
-            icon={<TrendingUp size={15} aria-hidden="true" />}
-          />
-          <Metric
-            label="1分短縮あたり"
-            value={
-              result.comparison.valueOfTimeSavedYenPerMinute === null
-                ? "未確認"
-                : `${result.comparison.valueOfTimeSavedYenPerMinute}円/分`
-            }
-          />
-        </div>
-      </section>
-
       <div className="route-grid" aria-label="各ルートの詳細">
         <RouteCard
           routeType="expressway"
@@ -177,7 +147,7 @@ export function RouteSummary({ result }: RouteSummaryProps) {
 
       {hasApiFailures ? (
         <ListBlock
-          title="API取得に失敗した項目"
+          title="未確認の項目"
           items={result.apiFailures}
           icon={<AlertTriangle size={16} aria-hidden="true" />}
         />

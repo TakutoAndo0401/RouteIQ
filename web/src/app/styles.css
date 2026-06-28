@@ -879,7 +879,7 @@ input[aria-invalid="true"],
   border: 0;
 }
 
-.location-picker-dialog .location-picker__map {
+.location-picker-dialog .location-picker__map-shell {
   min-height: 360px;
 }
 
@@ -912,13 +912,51 @@ input[aria-invalid="true"],
   font-size: 1rem;
 }
 
-.location-picker__map {
+.location-picker__map-shell {
+  position: relative;
   width: 100%;
   min-height: 260px;
   overflow: hidden;
   background: var(--routeiq-panel);
   border: 0;
   border-radius: var(--routeiq-radius-md);
+}
+
+.location-picker__map {
+  width: 100%;
+  height: 100%;
+  min-height: inherit;
+}
+
+.location-picker__map-status {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  gap: var(--routeiq-space-xs);
+  padding: var(--routeiq-space-lg);
+  color: var(--routeiq-muted);
+  text-align: center;
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--routeiq-panel-muted) 74%, transparent),
+      transparent
+    ),
+    var(--routeiq-panel);
+  font-size: 0.92rem;
+  font-weight: 800;
+}
+
+.location-picker__map-status--unavailable {
+  color: var(--lk-onwarningcontainer, #271900);
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--lk-warningcontainer, #ffdea9) 38%, transparent),
+      transparent
+    ),
+    var(--routeiq-panel);
 }
 
 .location-picker__status {
@@ -1135,23 +1173,6 @@ select:disabled {
 
 .empty-state__description strong {
   color: var(--routeiq-accent);
-}
-
-.empty-state__tips {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: var(--routeiq-space-2xs);
-}
-
-.empty-state__tips span {
-  padding: 6px 10px;
-  color: color-mix(in srgb, var(--routeiq-muted) 72%, var(--routeiq-text));
-  background: color-mix(in srgb, var(--routeiq-accent-soft) 44%, var(--routeiq-panel-muted));
-  border: 1px solid color-mix(in srgb, var(--routeiq-accent) 12%, transparent);
-  border-radius: 999px;
-  font-size: 0.82rem;
-  font-weight: 700;
 }
 
 .empty-state__cta {
@@ -1807,32 +1828,6 @@ select:disabled {
   transform: translateY(-1px);
 }
 
-.analysis-failure__panel {
-  display: grid;
-  gap: var(--routeiq-space-2xs);
-  padding: var(--routeiq-space-sm);
-  background: color-mix(in srgb, var(--routeiq-panel) 92%, #ffffff);
-  border: 1px solid color-mix(in srgb, var(--routeiq-border-strong) 20%, #ffffff);
-  border-radius: var(--routeiq-radius-md);
-}
-
-.analysis-failure__panel h3 {
-  margin: 0;
-  color: var(--routeiq-text);
-  font-size: 0.96rem;
-}
-
-.analysis-failure__panel ul {
-  display: grid;
-  gap: 8px;
-  margin: 0;
-  padding-left: 1.15rem;
-  color: var(--routeiq-muted);
-  font-size: 0.92rem;
-  line-height: 1.6;
-  text-wrap: pretty;
-}
-
 .analysis-failure__details {
   background: color-mix(in srgb, var(--routeiq-panel-muted) 72%, #ffffff);
   border-radius: var(--routeiq-radius-md);
@@ -2286,8 +2281,7 @@ select:disabled {
   background: var(--routeiq-accent-soft);
 }
 
-.metric-grid,
-.comparison-grid {
+.metric-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--routeiq-space-xs);
@@ -2356,16 +2350,6 @@ select:disabled {
   border-radius: var(--routeiq-radius-sm);
 }
 
-.route-card__icons {
-  position: absolute;
-  right: 12px;
-  bottom: 10px;
-  display: flex;
-  gap: 6px;
-  color: color-mix(in srgb, var(--routeiq-muted) 52%, transparent);
-}
-
-.comparison-panel,
 .list-block {
   padding: var(--routeiq-space-sm);
   background: var(--routeiq-panel);
@@ -2374,7 +2358,6 @@ select:disabled {
   box-shadow: 0 2px 8px rgba(23, 27, 39, 0.05);
 }
 
-.comparison-panel h3,
 .list-block h3 {
   display: flex;
   align-items: center;
@@ -2382,19 +2365,6 @@ select:disabled {
   margin: 0 0 var(--routeiq-space-xs);
   font-size: 0.98rem;
   letter-spacing: 0;
-}
-
-.comparison-panel__lead {
-  margin: 0 0 var(--routeiq-space-xs);
-  max-width: 48ch;
-  color: var(--routeiq-muted);
-  font-size: 0.88rem;
-  line-height: 1.55;
-  text-wrap: balance;
-}
-
-.comparison-grid {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .trend-row {
@@ -2449,7 +2419,6 @@ a:focus-visible {
   .route-grid,
   .list-grid,
   .recommendation-band,
-  .comparison-grid,
   .route-option-grid,
   .status-layout,
   .result-dashboard,
@@ -2509,7 +2478,7 @@ a:focus-visible {
     max-height: 92vh;
   }
 
-  .location-picker-dialog .location-picker__map {
+  .location-picker-dialog .location-picker__map-shell {
     min-height: 300px;
   }
 
