@@ -45,6 +45,7 @@ describe("route chat", () => {
         origin: "東京",
         destination: "横浜",
         fuelEfficiencyKmPerLiter: 15,
+        fuelPriceYenPerLiter: 170,
         question: "現在の道路状況を確認して"
       },
       context()
