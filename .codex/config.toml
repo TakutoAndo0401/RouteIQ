@@ -1,0 +1,4 @@
+[mcp_servers.routeiq-storybook]
+url = "http://localhost:6006/mcp"
+enabled = true
+required = false

@@ -11,10 +11,12 @@
   ],
   "scripts": {
     "build": "pnpm --filter @routeiq/contracts build && pnpm --filter @routeiq/web build && pnpm --filter @routeiq/server build",
+    "build-storybook": "pnpm --filter @routeiq/web build-storybook",
     "build:cloudflare": "pnpm build",
     "dev": "pnpm --filter @routeiq/contracts build && pnpm --parallel --filter @routeiq/server --filter @routeiq/web dev",
     "lint": "pnpm --filter @routeiq/contracts lint && pnpm --filter @routeiq/web lint && pnpm --filter @routeiq/server lint",
     "start": "pnpm --filter @routeiq/server start",
+    "storybook": "pnpm --filter @routeiq/web storybook",
     "test": "pnpm --filter @routeiq/contracts build && pnpm --filter @routeiq/server test",
     "typecheck": "pnpm --filter @routeiq/contracts typecheck && pnpm --filter @routeiq/web typecheck && pnpm --filter @routeiq/server typecheck",
     "add": "pnpm --filter @routeiq/web run add"

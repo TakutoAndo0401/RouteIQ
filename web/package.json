@@ -5,8 +5,10 @@
   "type": "module",
   "scripts": {
     "build": "pnpm --filter @routeiq/contracts build && vite build",
+    "build-storybook": "storybook build",
     "dev": "pnpm --filter @routeiq/contracts build && vite --host 127.0.0.1",
     "lint": "eslint .",
+    "storybook": "storybook dev -p 6006 --no-open",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "add": "liftkit add"
   },
@@ -22,7 +24,19 @@
     "vite-plugin-singlefile": "^2.3.3"
   },
   "devDependencies": {
+    "@storybook/addon-a11y": "10.5.0",
+    "@storybook/addon-docs": "10.5.0",
+    "@storybook/addon-mcp": "0.7.0",
+    "@storybook/react-vite": "10.5.0",
     "@types/react": "^19.2.17",
-    "@types/react-dom": "^19.2.3"
+    "@types/react-dom": "^19.2.3",
+    "msw": "2.15.0",
+    "msw-storybook-addon": "2.0.7",
+    "storybook": "10.5.0"
+  },
+  "msw": {
+    "workerDirectory": [
+      ".storybook/public"
+    ]
   }
 }

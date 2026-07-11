@@ -1,12 +1,21 @@
 import { Moon, PanelLeftClose, PanelLeftOpen, Sun } from "lucide-react";
 
 type AppHeaderProps = {
+  /** 現在ダークテーマが有効かどうか。 */
   isDarkMode: boolean;
+  /** 検索条件サイドバーが開いているかどうか。 */
   isSidebarOpen: boolean;
+  /** 検索条件サイドバーの開閉操作で呼ばれます。 */
   onToggleSidebar: () => void;
+  /** ライト／ダークテーマの切り替え操作で呼ばれます。 */
   onToggleTheme: () => void;
 };
 
+/**
+ * RouteIQのブランド、検索条件サイドバーの開閉、テーマ切り替えを提供します。
+ *
+ * @summary アプリ全体の操作をまとめるヘッダー
+ */
 export function AppHeader({
   isDarkMode,
   isSidebarOpen,

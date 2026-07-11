@@ -1,6 +1,7 @@
 node_modules/
 dist/
 coverage/
+storybook-static/
 .env
 .pnpm-store/
 .DS_Store

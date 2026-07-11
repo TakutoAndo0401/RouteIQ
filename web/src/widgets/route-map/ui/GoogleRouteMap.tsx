@@ -8,6 +8,7 @@ import {
 } from "../../../shared/lib/routeIqApi";
 
 interface GoogleRouteMapProps {
+  /** 地図へ表示する出発地と目的地を含む経路入力。 */
   input: RouteInput;
 }
 
@@ -40,6 +41,11 @@ function formatLocationLabel(value: string): string {
     .trim();
 }
 
+/**
+ * API keyを取得できる場合は経路をGoogle Mapsで埋め込み表示し、取得できない場合も外部地図へのリンクを提供します。
+ *
+ * @summary 入力済み経路をGoogle Mapsで確認
+ */
 export function GoogleRouteMap({ input }: GoogleRouteMapProps) {
   const [apiKey, setApiKey] = useState<string | null | undefined>(undefined);
   const directionsUrl = buildDirectionsUrl(input);

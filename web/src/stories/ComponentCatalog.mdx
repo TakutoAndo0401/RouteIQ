@@ -1,0 +1,49 @@
+import { Meta } from "@storybook/addon-docs/blocks";
+
+<Meta title="Overview/Component Catalog" />
+
+# RouteIQ Component Catalog
+
+RouteIQ の現行 React UI を、責務と依存方向に合わせてカタログ化しています。上部ツールバーのテーマ切り替えで、すべての story をライト／ダークの両方で確認できます。
+
+## カタログ対象
+
+<table>
+  <thead>
+    <tr>
+      <th>分類</th>
+      <th>Component</th>
+      <th>主な確認状態</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><td>Shared</td><td><code>LoadingSpinner</code></td><td>サイズ、アクセシブルなラベル</td></tr>
+    <tr><td>Shared</td><td><code>Metric</code></td><td>neutral / good / warn、アイコン</td></tr>
+    <tr><td>Features</td><td><code>RouteForm</code></td><td>空、入力済み、無効、validation、API failure、地図 modal</td></tr>
+    <tr><td>Features</td><td><code>LocationPickerMap</code></td><td>loading、利用不可、出発地／目的地、候補選択</td></tr>
+    <tr><td>Widgets</td><td><code>AppHeader</code></td><td>sidebar 開閉、ライト／ダーク</td></tr>
+    <tr><td>Widgets</td><td><code>RouteCard</code></td><td>高速／一般道、おすすめ、料金未確認</td></tr>
+    <tr><td>Widgets</td><td><code>RouteSummary</code></td><td>高速推奨、一般道推奨、未確認項目</td></tr>
+    <tr><td>Widgets</td><td><code>GoogleRouteMap</code></td><td>config loading、地図 fallback、長い地点名</td></tr>
+    <tr><td>Pages</td><td><code>RouteComparisonPage</code></td><td>初期、履歴、sidebar 閉、比較成功、分析失敗</td></tr>
+  </tbody>
+</table>
+
+## 境界の考え方
+
+コード上には 18 個の React component 関数があります。このうち上記 9 個を独立した公開 UI surface として扱います。`RouteOption`、`ListBlock`、`AnalysisFailureState`、履歴パネル内部などの非公開 subcomponent は、Storybook のためだけに export せず、親 component の状態 story で確認します。
+
+`App` はテーマ永続化と `RouteComparisonPage` の起動を担う composition root です。表示内容は Page stories と重複するため、個別カタログには含めていません。
+
+## 外部依存の扱い
+
+<ul>
+  <li><code>/api/client-config</code>、<code>/api/fuel-prices</code>、<code>/api/route-analysis</code> は MSW の固定 fixture で再現します。</li>
+  <li>Google Maps は実 API key を使わず、利用不可状態または Storybook 専用の決定論的 mock で確認します。</li>
+  <li>global CSS は本番と同じ順序で読み込みます。</li>
+  <li>地図 modal のように <code>document.body</code> へ portal する UI もテーマが揃うよう、dark class は <code>html</code> と <code>body</code> の両方へ適用します。</li>
+</ul>
+
+## まだ component 化していないパターン
+
+`.primary-button`、`.input-shell`、role pill、panel/card surface は複数箇所で使われていますが、現時点では独立した React component ではありません。再利用要件が増えた時点で抽出し、Shared または Widgets に追加するのが安全です。

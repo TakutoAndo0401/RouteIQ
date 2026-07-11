@@ -1,0 +1,56 @@
+#storybook-root {
+  min-height: 100vh;
+}
+
+.docs-story {
+  background: var(--routeiq-page);
+}
+
+.storybook-component-frame {
+  width: min(100%, 720px);
+  margin-inline: auto;
+}
+
+.storybook-component-frame--narrow {
+  width: min(100%, 420px);
+}
+
+.storybook-inline-gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1rem;
+  width: min(100%, 760px);
+}
+
+.storybook-inline-gallery > * {
+  min-width: 0;
+}
+
+.storybook-map-canvas {
+  display: grid;
+  min-height: 100%;
+  place-items: center;
+  padding: 1rem;
+  background:
+    linear-gradient(35deg, transparent 42%, rgb(255 255 255 / 72%) 43% 48%, transparent 49%),
+    linear-gradient(145deg, transparent 38%, rgb(255 255 255 / 62%) 39% 45%, transparent 46%),
+    color-mix(in srgb, var(--routeiq-accent-soft) 70%, var(--routeiq-panel));
+}
+
+.storybook-map-canvas button {
+  min-height: 48px;
+  padding: 0.75rem 1rem;
+  color: var(--lk-onprimary);
+  font: inherit;
+  font-weight: 700;
+  background: var(--routeiq-primary);
+  border: 0;
+  border-radius: var(--routeiq-radius-sm);
+  box-shadow: var(--routeiq-shadow-panel);
+  cursor: pointer;
+}
+
+.storybook-map-canvas button:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--routeiq-primary) 36%, white);
+  outline-offset: 3px;
+}

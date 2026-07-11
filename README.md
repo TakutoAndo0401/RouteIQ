@@ -113,6 +113,34 @@ pnpm dev
 
 ビルド済みの画面を確認する場合は `pnpm build` 後に `pnpm start` を実行し、`http://localhost:8787/` を開きます。`/preview` でも同じ画面を表示できますが、通常は `/` を使います。
 
+### UI コンポーネントカタログ
+
+Storybook で、Shared / Features / Widgets / Pages に分類した UI と状態別の表示を確認できます。
+
+```sh
+pnpm storybook
+```
+
+ブラウザで `http://localhost:6006/` を開きます。API 通信と Google Maps は Storybook 専用の固定 mock を使うため、server や API key を用意せずに確認できます。上部ツールバーからライト／ダークテーマを切り替えられます。
+
+静的カタログがビルドできることを確認する場合は次を実行します。
+
+```sh
+pnpm build-storybook
+```
+
+### AI からコンポーネントカタログを参照する
+
+Storybook には MCP server を組み込んでいます。Storybook の起動中は `http://localhost:6006/mcp` から、コンポーネント一覧、props、ストーリー、利用例を AI agent が参照できます。
+
+```sh
+pnpm storybook
+```
+
+この repository の Codex 用接続設定は `.codex/config.toml`、利用ルールは `AGENTS.md` にあります。Storybook を起動してから Codex の task を新しく開くか再起動してください。接続後は `routeiq-storybook` の `list-all-documentation`、`get-documentation`、`get-documentation-for-story`、`get-storybook-story-instructions`、`get-stories-by-component`、`preview-stories` を利用できます。
+
+MCP server は開発用 Storybook と一緒に動作します。`pnpm build-storybook` で生成した静的カタログだけでは MCP endpoint は起動しません。
+
 ## 構成
 
 RouteIQ は pnpm workspace で構成しています。
