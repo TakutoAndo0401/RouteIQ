@@ -15,13 +15,22 @@ type PickerTarget = "origin" | "destination";
 type MapLoadState = "loading" | "ready" | "unavailable";
 
 interface LocationPickerMapProps {
+  /** 地図上の地点選択を無効にします。 */
   disabled?: boolean;
+  /** 現在の出発地の表示値。 */
   origin: string;
+  /** 現在の目的地の表示値。 */
   destination: string;
+  /** 今回の地図操作で更新する地点。 */
   target: PickerTarget;
+  /** 出発地が選択されたとき、逆ジオコーディング後の値を渡します。 */
   onOriginChange: (value: string) => void;
+  /** 目的地が選択されたとき、逆ジオコーディング後の値を渡します。 */
   onDestinationChange: (value: string) => void;
+  /** 地点の選択と値の反映が完了したときに呼ばれます。 */
   onSelectComplete?: () => void;
+  /** 地図を閉じ、住所または施設名の手入力へ戻るときに呼ばれます。 */
+  onManualEntryRequest?: () => void;
 }
 
 const DEFAULT_CENTER: LatLngLiteral = { lat: 35.681236, lng: 139.767125 };
@@ -30,6 +39,11 @@ function isLoadingStatus(status: string): boolean {
   return status.includes("読み込み中") || status.includes("確認しています");
 }
 
+/**
+ * Google Maps上で候補地点を選び、住所へ変換して出発地または目的地へ反映します。
+ *
+ * @summary 地図から出発地または目的地を選択
+ */
 export function LocationPickerMap({
   disabled = false,
   origin,
@@ -37,7 +51,8 @@ export function LocationPickerMap({
   target,
   onOriginChange,
   onDestinationChange,
-  onSelectComplete
+  onSelectComplete,
+  onManualEntryRequest
 }: LocationPickerMapProps) {
   const mapNodeRef = useRef<HTMLDivElement | null>(null);
   const markerRef = useRef<GoogleMarker | null>(null);
@@ -147,7 +162,7 @@ export function LocationPickerMap({
       listener?.remove();
       tilesListener?.remove();
     };
-  }, [onDestinationChange, onOriginChange, onSelectComplete]);
+  }, []);
 
   return (
     <section className="location-picker" aria-label="地図で地点を選択">
@@ -160,7 +175,11 @@ export function LocationPickerMap({
             }`}
             role="status"
           >
-            {mapLoadState === "loading" ? <LoadingSpinner label={status} size={18} /> : null}
+            {mapLoadState === "loading" ? (
+              <span aria-hidden="true">
+                <LoadingSpinner label={status} size={18} />
+              </span>
+            ) : null}
             <span>{status}</span>
           </div>
         ) : null}
@@ -169,7 +188,9 @@ export function LocationPickerMap({
         {mapLoadState === "ready" || isResolvingSelection ? (
           <span className="location-picker__status-message">
             {isLoadingStatus(status) || isResolvingSelection ? (
-              <LoadingSpinner label={status} size={14} />
+              <span aria-hidden="true">
+                <LoadingSpinner label={status} size={14} />
+              </span>
             ) : null}
             <span>{status}</span>
           </span>
@@ -186,25 +207,36 @@ export function LocationPickerMap({
         </dl>
       </div>
       <div className="location-picker__actions">
-        <button
-          className="primary-button"
-          type="button"
-          disabled={disabled || isResolvingSelection || !selectedAddress}
-          onClick={() => {
-            if (!selectedAddress) return;
+        {mapLoadState === "unavailable" && onManualEntryRequest ? (
+          <button
+            className="primary-button location-picker__manual-entry-button"
+            type="button"
+            disabled={disabled}
+            onClick={onManualEntryRequest}
+          >
+            住所を入力する
+          </button>
+        ) : (
+          <button
+            className="primary-button"
+            type="button"
+            disabled={disabled || isResolvingSelection || !selectedAddress}
+            onClick={() => {
+              if (!selectedAddress) return;
 
-            if (target === "origin") {
-              onOriginChange(selectedAddress);
-            } else {
-              onDestinationChange(selectedAddress);
-            }
+              if (target === "origin") {
+                onOriginChange(selectedAddress);
+              } else {
+                onDestinationChange(selectedAddress);
+              }
 
-            setStatus(`${targetLabel}を設定しました。`);
-            onSelectComplete?.();
-          }}
-        >
-          {targetLabel}に設定する
-        </button>
+              setStatus(`${targetLabel}を設定しました。`);
+              onSelectComplete?.();
+            }}
+          >
+            {targetLabel}に設定する
+          </button>
+        )}
       </div>
     </section>
   );

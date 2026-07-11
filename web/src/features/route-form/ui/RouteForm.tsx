@@ -20,13 +20,21 @@ import { useFuelPriceAverages } from "../model/useFuelPriceAverages";
 import { LocationPickerMap } from "./LocationPickerMap";
 
 interface RouteFormProps {
+  /** すべての入力と送信操作を無効にします。 */
   disabled?: boolean;
+  /** tokenが変わるたびに、指定した出発地または目的地へフォーカスします。 */
   focusRequest?: FormFocusRequest | null;
+  /** 履歴の復元などでフォームへ反映する初期値。 */
   initialValues?: RouteAnalysisRequest | null;
+  /** tokenが変わるたびに、指定した地点の地図選択を開きます。 */
   mapPickerRequest?: FormMapPickerRequest | null;
+  /** ユーザーが入力内容を変更したときに呼ばれます。 */
   onDraftChange?: () => void;
+  /** focusRequestを処理し終えたときに呼ばれます。 */
   onFocusRequestConsumed?: () => void;
+  /** mapPickerRequestを処理し終えたときに呼ばれます。 */
   onMapPickerRequestConsumed?: () => void;
+  /** 入力検証に成功した経路比較条件を渡します。 */
   onSubmit: (input: RouteAnalysisRequest) => void;
 }
 
@@ -47,6 +55,11 @@ type FormMapPickerRequest = {
 const VEHICLE_TYPES = ["普通車", "軽自動車", "中型車", "大型車"] as const;
 const DEFAULT_QUESTION = "現在の道路状況を確認して";
 
+/**
+ * 出発地・目的地・燃費・燃料単価・車両条件を収集し、検証済みの経路比較条件を送信します。
+ *
+ * @summary 経路比較に必要な条件を入力するフォーム
+ */
 export function RouteForm({
   disabled = false,
   focusRequest = null,
@@ -65,6 +78,7 @@ export function RouteForm({
   const [errors, setErrors] = useState<FormErrors>({});
   const [isResolvingCurrentLocation, setIsResolvingCurrentLocation] = useState(false);
   const { fuelPriceAverages, fuelPriceError } = useFuelPriceAverages();
+  const fuelPriceState = fuelPriceAverages ? "ready" : fuelPriceError ? "error" : "loading";
   const [isMapPickerOpen, setIsMapPickerOpen] = useState(false);
   const [mapPickerTarget, setMapPickerTarget] = useState<MapPickerTarget>("origin");
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
@@ -136,6 +150,17 @@ export function RouteForm({
 
   const closeMapPicker = () => {
     setIsMapPickerOpen(false);
+  };
+
+  const closeMapPickerForManualEntry = () => {
+    const input =
+      mapPickerTarget === "origin" ? originInputRef.current : destinationInputRef.current;
+    mapPickerReturnFocusRef.current = input;
+    setIsMapPickerOpen(false);
+    requestAnimationFrame(() => {
+      input?.focus();
+      input?.select();
+    });
   };
 
   useEffect(() => {
@@ -388,8 +413,10 @@ export function RouteForm({
             IC名、住所、緯度経度で指定できます。
           </small>
           {isResolvingCurrentLocation ? (
-            <small className="form-field__hint form-field__hint--loading">
-              <LoadingSpinner label="現在地を確認中" size={14} />
+            <small className="form-field__hint form-field__hint--loading" role="status">
+              <span aria-hidden="true">
+                <LoadingSpinner label="現在地を確認中" size={14} />
+              </span>
               <span>現在地を確認しています。</span>
             </small>
           ) : null}
@@ -472,6 +499,11 @@ export function RouteForm({
                 onChange={(event) => {
                   setFuelEfficiency(event.target.value);
                   onDraftChange?.();
+                  setErrors((current) =>
+                    current.fuelEfficiency
+                      ? { ...current, fuelEfficiency: undefined }
+                      : current
+                  );
                 }}
                 disabled={disabled}
                 required
@@ -493,6 +525,9 @@ export function RouteForm({
                 onChange={(event) => {
                   setFuelPrice(event.target.value);
                   onDraftChange?.();
+                  setErrors((current) =>
+                    current.fuelPrice ? { ...current, fuelPrice: undefined } : current
+                  );
                 }}
                 disabled={disabled}
                 placeholder="全国平均を使用"
@@ -522,10 +557,20 @@ export function RouteForm({
                 ))}
               </div>
             </fieldset>
-            <div className="fuel-average-panel" aria-label="燃料全国平均価格">
+            <div
+              className={`fuel-average-panel fuel-average-panel--${fuelPriceState}`}
+              aria-label="燃料全国平均価格"
+              aria-busy={fuelPriceState === "loading"}
+            >
               <div>
                 <span>全国平均</span>
-                <strong>{fuelPriceAverages?.prices[0]?.surveyedAt ?? "取得中"}</strong>
+                <strong>
+                  {fuelPriceState === "ready"
+                    ? fuelPriceAverages?.prices[0]?.surveyedAt
+                    : fuelPriceState === "error"
+                      ? "未取得"
+                      : "取得中"}
+                </strong>
               </div>
               <div className="fuel-average-panel__prices">
                 {fuelPriceAverages
@@ -537,6 +582,11 @@ export function RouteForm({
                         onClick={() => {
                           setFuelPrice(String(price.value));
                           onDraftChange?.();
+                          setErrors((current) =>
+                            current.fuelPrice
+                              ? { ...current, fuelPrice: undefined }
+                              : current
+                          );
                         }}
                       >
                         <span>{price.label}</span>
@@ -546,14 +596,16 @@ export function RouteForm({
                   : ["レギュラー", "ハイオク", "軽油"].map((label) => (
                       <button key={label} type="button" disabled>
                         <span>{label}</span>
-                        <strong>取得中</strong>
+                        <strong>{fuelPriceState === "error" ? "未取得" : "取得中"}</strong>
                       </button>
                     ))}
               </div>
-              <p>
-                {fuelPriceError
-                  ? fuelPriceError
-                  : `出典: ${fuelPriceAverages?.sourceLabel ?? "石油製品価格調査"}`}
+              <p role={fuelPriceState === "error" ? "alert" : undefined}>
+                {fuelPriceState === "error"
+                  ? `${fuelPriceError}上の「ガソリン円/L」へ価格を手入力してください。`
+                  : fuelPriceState === "loading"
+                    ? "全国平均価格を取得しています。"
+                    : `出典: ${fuelPriceAverages?.sourceLabel ?? "石油製品価格調査"}`}
               </p>
             </div>
           </div>
@@ -600,6 +652,7 @@ export function RouteForm({
                   onOriginChange={updateOrigin}
                   onDestinationChange={updateDestination}
                   onSelectComplete={closeMapPicker}
+                  onManualEntryRequest={closeMapPickerForManualEntry}
                 />
               </section>
             </div>,

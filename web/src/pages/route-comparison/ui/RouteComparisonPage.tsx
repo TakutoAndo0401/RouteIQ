@@ -215,7 +215,9 @@ function isMobileView() {
 }
 
 type RouteComparisonPageProps = {
+  /** ページ全体で現在ダークテーマが有効かどうか。 */
   isDarkMode: boolean;
+  /** ライト／ダークテーマの切り替え操作で呼ばれます。 */
   onToggleTheme: () => void;
 };
 
@@ -381,6 +383,11 @@ function RouteHistoryPanel({
   );
 }
 
+/**
+ * 条件入力、履歴、経路地図、比較結果を統合し、RouteIQの経路判断フロー全体を提供します。
+ *
+ * @summary RouteIQの経路比較ワークフローを構成するページ
+ */
 export function RouteComparisonPage({ isDarkMode, onToggleTheme }: RouteComparisonPageProps) {
   const { analysis, busy, error, reset, submit } = useRouteAnalysis();
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -394,6 +401,7 @@ export function RouteComparisonPage({ isDarkMode, onToggleTheme }: RouteComparis
   const [mapWidthPercent, setMapWidthPercent] = useState(DEFAULT_MAP_WIDTH_PERCENT);
   const dashboardRef = useRef<HTMLDivElement | null>(null);
   const resultPaneRef = useRef<HTMLElement | null>(null);
+  const focusResultAfterSubmit = useRef(false);
   const isResizingMap = useRef(false);
   const formRequestToken = useRef(0);
 
@@ -414,11 +422,20 @@ export function RouteComparisonPage({ isDarkMode, onToggleTheme }: RouteComparis
   const showResultsOnMobile = useCallback(() => {
     if (!isMobileView()) return;
 
+    focusResultAfterSubmit.current = true;
     setIsSidebarOpen(false);
-    requestAnimationFrame(() => {
-      resultPaneRef.current?.scrollIntoView({ block: "start" });
-    });
   }, []);
+
+  useEffect(() => {
+    if (!focusResultAfterSubmit.current || isSidebarOpen || !analysis) return;
+
+    focusResultAfterSubmit.current = false;
+    const resultPane = resultPaneRef.current;
+    if (!resultPane) return;
+
+    resultPane.focus({ preventScroll: true });
+    resultPane.scrollIntoView({ block: "start" });
+  }, [analysis, isSidebarOpen]);
 
   const handleSubmit = useCallback(
     async (input: RouteAnalysisRequest) => {
@@ -466,6 +483,11 @@ export function RouteComparisonPage({ isDarkMode, onToggleTheme }: RouteComparis
     formRequestToken.current += 1;
     return formRequestToken.current;
   }, []);
+
+  const openFormAtOrigin = useCallback(() => {
+    setIsSidebarOpen(true);
+    setFormFocusRequest({ target: "origin", token: nextFormRequestToken() });
+  }, [nextFormRequestToken]);
 
   const editAsAddress = useCallback(
     (input: RouteAnalysisRequest) => {
@@ -550,7 +572,7 @@ export function RouteComparisonPage({ isDarkMode, onToggleTheme }: RouteComparis
   }, []);
 
   return (
-    <main className="app-shell app-shell--route-status">
+    <div className="app-shell app-shell--route-status">
       <AppHeader
         isDarkMode={isDarkMode}
         isSidebarOpen={isSidebarOpen}
@@ -558,7 +580,7 @@ export function RouteComparisonPage({ isDarkMode, onToggleTheme }: RouteComparis
         onToggleTheme={onToggleTheme}
       />
 
-      <section className={`status-layout${isSidebarOpen ? "" : " status-layout--sidebar-closed"}`}>
+      <main className={`status-layout${isSidebarOpen ? "" : " status-layout--sidebar-closed"}`}>
         {isSidebarOpen ? (
           <aside className="condition-pane" aria-label="ルート検索条件">
             <div className="condition-pane__header">
@@ -585,15 +607,35 @@ export function RouteComparisonPage({ isDarkMode, onToggleTheme }: RouteComparis
           </aside>
         ) : null}
 
-        <section ref={resultPaneRef} className="result-pane" aria-label="道路状況の確認結果">
+        <span className="visually-hidden" role="status" aria-live="polite">
+          {busy
+            ? "道路状況を確認しています。"
+            : !error && analysis
+              ? "経路比較結果を更新しました。"
+              : ""}
+        </span>
+
+        <section
+          ref={resultPaneRef}
+          className="result-pane"
+          aria-busy={busy}
+          aria-label="道路状況の確認結果"
+          tabIndex={-1}
+        >
           {busy ? (
-            <div className="result-pane__busy">
-              <LoadingSpinner label="道路状況を確認中" />
+            <div className="result-pane__busy" aria-hidden="true">
+              <span aria-hidden="true">
+                <LoadingSpinner label="道路状況を確認中" />
+              </span>
               <span>道路状況を確認しています</span>
             </div>
           ) : null}
-          {error ? <div className="error-banner">{error}</div> : null}
-          {analysis ? (
+          {error ? (
+            <div className="error-banner" role="alert">
+              {error}
+            </div>
+          ) : null}
+          {!busy && !error && analysis ? (
             analysis.routeComparison ? (
               <div
                 ref={dashboardRef}
@@ -639,7 +681,7 @@ export function RouteComparisonPage({ isDarkMode, onToggleTheme }: RouteComparis
                 <GoogleRouteMap input={analysis.input} />
               </div>
             )
-          ) : (
+          ) : busy || error ? null : (
             <section
               className={`empty-state${isSidebarOpen ? " empty-state--with-sidebar" : ""}`}
             >
@@ -663,7 +705,7 @@ export function RouteComparisonPage({ isDarkMode, onToggleTheme }: RouteComparis
                   <button
                     type="button"
                     className="empty-state__cta"
-                    onClick={() => setIsSidebarOpen(true)}
+                    onClick={openFormAtOrigin}
                   >
                     条件を入力する
                   </button>
@@ -672,7 +714,7 @@ export function RouteComparisonPage({ isDarkMode, onToggleTheme }: RouteComparis
             </section>
           )}
         </section>
-      </section>
-    </main>
+      </main>
+    </div>
   );
 }

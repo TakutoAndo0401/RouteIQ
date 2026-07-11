@@ -9,14 +9,25 @@ import {
 import { Metric } from "../../../shared/ui";
 
 interface RouteCardProps {
+  /** 高速優先または一般道のどちらを表示するか。 */
   routeType: RouteType;
+  /** 時間、距離、料金、燃料費、交通状況を含む単一経路の集計。 */
   route: RouteCostSummary;
+  /** この経路がおすすめとして選ばれているかどうか。 */
   recommended: boolean;
 }
 
+/**
+ * 1つの経路候補について、時間・費用・距離・交通状況とおすすめ状態を表示します。
+ *
+ * @summary 単一の経路候補を比較用カードで表示
+ */
 export function RouteCard({ routeType, route, recommended }: RouteCardProps) {
   const title = routeType === "expressway" ? "高速優先ルート" : "一般道ルート";
   const comparisonRole = recommended ? "おすすめ" : "比較対象";
+  const totalCostTone = route.totalCostYen === null ? "warn" : "neutral";
+  const tollTone =
+    route.tollYen === null || route.tollConfidence === "unavailable" ? "warn" : "neutral";
 
   return (
     <article className={`route-card route-card--${routeType}`}>
@@ -33,8 +44,8 @@ export function RouteCard({ routeType, route, recommended }: RouteCardProps) {
       </div>
       <div className="metric-grid">
         <Metric label="時間" value={formatMinutes(route.durationMinutes)} />
-        <Metric label="総額" value={formatYen(route.totalCostYen)} tone="good" />
-        <Metric label="有料道路料金" value={formatYen(route.tollYen)} tone="warn" />
+        <Metric label="総額" value={formatYen(route.totalCostYen)} tone={totalCostTone} />
+        <Metric label="有料道路料金" value={formatYen(route.tollYen)} tone={tollTone} />
         <Metric label="ガソリン代" value={formatYen(route.fuelCostYen)} />
         <Metric label="距離" value={formatDistanceKm(route.distanceKm)} />
       </div>

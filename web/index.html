@@ -3,6 +3,26 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="light dark" />
+    <script>
+      (() => {
+        let theme;
+
+        try {
+          theme = window.localStorage.getItem("routeiq-theme");
+        } catch {
+          theme = null;
+        }
+
+        if (theme !== "light" && theme !== "dark") {
+          theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+        }
+
+        document.documentElement.classList.toggle("routeiq-theme-dark", theme === "dark");
+        document.documentElement.classList.toggle("routeiq-theme-light", theme === "light");
+        document.querySelector('meta[name="color-scheme"]').content = theme;
+      })();
+    </script>
     <link rel="icon" href="data:," />
     <title>RouteIQ</title>
   </head>

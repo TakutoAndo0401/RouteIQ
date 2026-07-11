@@ -8,22 +8,74 @@ import {
 import { RouteCard } from "./RouteCard";
 
 interface RouteSummaryProps {
+  /** 高速優先と一般道の比較結果、おすすめ、未確認項目を含む解析結果。 */
   result: CompareRoutesResult;
 }
 
-function buildRecommendationLead(result: CompareRoutesResult) {
-  const timeDifference = formatMinutes(result.comparison.timeDifferenceMinutes);
-  const costDifference = formatYen(result.comparison.costDifferenceYen);
+interface DifferenceCopy {
+  sentence: string;
+  metricValue: string;
+}
 
-  if (result.recommendedRoute === "expressway") {
-    return `今回は高速優先がおすすめです。一般道より${timeDifference}早く、追加費用は${costDifference}です。`;
+function buildTimeDifferenceCopy(value: number): DifferenceCopy {
+  if (value > 0) {
+    const duration = formatMinutes(value);
+    return {
+      sentence: `高速優先は一般道より${duration}短時間です`,
+      metricValue: `高速が${duration}短い`
+    };
   }
 
-  if (result.comparison.timeDifferenceMinutes > 0) {
-    return `今回は一般道がおすすめです。高速優先でも${timeDifference}しか短縮できず、${costDifference}余計にかかります。`;
+  if (value < 0) {
+    const duration = formatMinutes(Math.abs(value));
+    return {
+      sentence: `一般道は高速優先より${duration}短時間です`,
+      metricValue: `一般道が${duration}短い`
+    };
   }
 
-  return `今回は一般道がおすすめです。所要時間差がほぼなく、${costDifference}の追加費用を避けられます。`;
+  return {
+    sentence: "所要時間に差はありません",
+    metricValue: "差なし"
+  };
+}
+
+function buildCostDifferenceCopy(value: number | null): DifferenceCopy {
+  if (value === null) {
+    return {
+      sentence: "費用差は未確認です",
+      metricValue: "未確認"
+    };
+  }
+
+  if (value > 0) {
+    const cost = formatYen(value);
+    return {
+      sentence: `高速優先は一般道より${cost}高くなります`,
+      metricValue: `高速が${cost}高い`
+    };
+  }
+
+  if (value < 0) {
+    const cost = formatYen(Math.abs(value));
+    return {
+      sentence: `高速優先は一般道より${cost}安くなります`,
+      metricValue: `高速が${cost}安い`
+    };
+  }
+
+  return {
+    sentence: "総額に差はありません",
+    metricValue: "差なし"
+  };
+}
+
+function buildRecommendationLead(
+  recommendedLabel: "高速優先" | "一般道",
+  timeDifference: DifferenceCopy,
+  costDifference: DifferenceCopy
+) {
+  return `今回は${recommendedLabel}がおすすめです。${timeDifference.sentence}。${costDifference.sentence}。`;
 }
 
 function ListBlock({
@@ -37,7 +89,7 @@ function ListBlock({
 }) {
   if (items.length === 0) return null;
   return (
-    <section className="list-block">
+    <section className="list-block list-block--warning">
       <h3>
         {icon}
         {title}
@@ -84,10 +136,21 @@ function RouteOption({
   );
 }
 
+/**
+ * 経路比較のおすすめ理由、判断指標、各候補の費用・時間・未確認項目をまとめて表示します。
+ *
+ * @summary 高速優先と一般道の比較結果を要約
+ */
 export function RouteSummary({ result }: RouteSummaryProps) {
   const hasApiFailures = result.apiFailures.length > 0;
-  const recommendationLead = buildRecommendationLead(result);
   const recommendedLabel = result.recommendedRoute === "expressway" ? "高速優先" : "一般道";
+  const timeDifference = buildTimeDifferenceCopy(result.comparison.timeDifferenceMinutes);
+  const costDifference = buildCostDifferenceCopy(result.comparison.costDifferenceYen);
+  const recommendationLead = buildRecommendationLead(
+    recommendedLabel,
+    timeDifference,
+    costDifference
+  );
 
   return (
     <div className="summary-stack">
@@ -110,11 +173,15 @@ export function RouteSummary({ result }: RouteSummaryProps) {
           </div>
           <div>
             <span>時間差</span>
-            <strong>{formatMinutes(result.comparison.timeDifferenceMinutes)}</strong>
+            <strong className="recommendation-band__metric-value recommendation-band__metric-value--directional">
+              {timeDifference.metricValue}
+            </strong>
           </div>
           <div>
-            <span>追加費用</span>
-            <strong>{formatYen(result.comparison.costDifferenceYen)}</strong>
+            <span>費用差</span>
+            <strong className="recommendation-band__metric-value recommendation-band__metric-value--directional">
+              {costDifference.metricValue}
+            </strong>
           </div>
         </div>
       </section>
@@ -132,6 +199,14 @@ export function RouteSummary({ result }: RouteSummaryProps) {
         />
       </section>
 
+      {hasApiFailures ? (
+        <ListBlock
+          title="未確認の項目"
+          items={result.apiFailures}
+          icon={<AlertTriangle size={16} aria-hidden="true" />}
+        />
+      ) : null}
+
       <div className="route-grid" aria-label="各ルートの詳細">
         <RouteCard
           routeType="expressway"
@@ -144,14 +219,6 @@ export function RouteSummary({ result }: RouteSummaryProps) {
           recommended={result.recommendedRoute === "local"}
         />
       </div>
-
-      {hasApiFailures ? (
-        <ListBlock
-          title="未確認の項目"
-          items={result.apiFailures}
-          icon={<AlertTriangle size={16} aria-hidden="true" />}
-        />
-      ) : null}
     </div>
   );
 }
