@@ -1,5 +1,9 @@
 # RouteIQ agent instructions
 
+## Shared skills
+
+`.codex/skills/` is the source of truth for the repository's skills. Run `pnpm rulesync` after changing a skill to stage it for rulesync and regenerate the Copilot-compatible files under `.github/skills/`. Use `pnpm rulesync:check` to verify that the generated Copilot files are up to date. Do not edit `.github/skills/` directly; the temporary `.rulesync/skills/` staging directory is ignored.
+
 ## UI component work
 
 When a task involves RouteIQ UI components, use the `routeiq-storybook` MCP server before changing or describing component code.

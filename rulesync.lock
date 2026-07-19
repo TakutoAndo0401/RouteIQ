@@ -1,0 +1,15 @@
+{
+  "lockfileVersion": 1,
+  "sources": {
+    "emilkowalski/skills@main": {
+      "requestedRef": "main",
+      "resolvedRef": "6bf24434f7730ad169077756cf9c7cd7bd675fc6",
+      "resolvedAt": "2026-07-19T17:04:17.412Z",
+      "skills": {
+        "apple-design": {
+          "integrity": "sha256-8d5d6949abe176aed835dc259e91470b6ee219f2bc2af92784a7f072a2e50ed0"
+        }
+      }
+    }
+  }
+}

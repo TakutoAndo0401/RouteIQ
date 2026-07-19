@@ -15,6 +15,8 @@
     "build:cloudflare": "pnpm build",
     "dev": "pnpm --filter @routeiq/contracts build && pnpm --parallel --filter @routeiq/server --filter @routeiq/web dev",
     "lint": "pnpm --filter @routeiq/contracts lint && pnpm --filter @routeiq/web lint && pnpm --filter @routeiq/server lint",
+    "rulesync": "rulesync install && node scripts/rulesync-skills.mjs generate",
+    "rulesync:check": "rulesync install --frozen && node scripts/rulesync-skills.mjs check",
     "start": "pnpm --filter @routeiq/server start",
     "storybook": "pnpm --filter @routeiq/web storybook",
     "test": "pnpm --filter @routeiq/contracts build && pnpm --filter @routeiq/server test",
@@ -26,6 +28,7 @@
     "@eslint/js": "^10.0.1",
     "@types/node": "^26.0.1",
     "eslint": "^10.5.0",
+    "rulesync": "14.0.1",
     "typescript": "^6.0.3",
     "typescript-eslint": "^8.62.0",
     "vitest": "^4.1.9"

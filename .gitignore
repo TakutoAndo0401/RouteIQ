@@ -2,6 +2,7 @@ node_modules/
 dist/
 coverage/
 storybook-static/
+.rulesync/skills/
 .env
 .pnpm-store/
 .DS_Store

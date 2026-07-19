@@ -1,0 +1,11 @@
+{
+  "$schema": "https://github.com/dyoshikawa/rulesync/releases/latest/download/config-schema.json",
+  "targets": ["copilot"],
+  "features": ["skills"],
+  "sources": [
+    {
+      "source": "emilkowalski/skills@main",
+      "skills": ["apple-design"],
+    },
+  ],
+}
