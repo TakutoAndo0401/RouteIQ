@@ -49,9 +49,6 @@ export function RouteCard({ routeType, route, recommended }: RouteCardProps) {
         <Metric label="ガソリン代" value={formatYen(route.fuelCostYen)} />
         <Metric label="距離" value={formatDistanceKm(route.distanceKm)} />
       </div>
-      {route.tollFallbackMessage ? (
-        <div className="route-card__notice">{route.tollFallbackMessage}</div>
-      ) : null}
       <div className="route-card__traffic">
         <Gauge size={16} aria-hidden="true" />
         <span>{route.trafficSummary}</span>

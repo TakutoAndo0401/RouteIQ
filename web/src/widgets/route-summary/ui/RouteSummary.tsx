@@ -1,7 +1,6 @@
 import { AlertTriangle, Zap } from "lucide-react";
 import {
   formatYen,
-  formatDistanceKm,
   formatMinutes,
   type CompareRoutesResult
 } from "../../../entities/route/model";
@@ -12,70 +11,17 @@ interface RouteSummaryProps {
   result: CompareRoutesResult;
 }
 
-interface DifferenceCopy {
-  sentence: string;
-  metricValue: string;
+function buildTimeDifferenceValue(value: number): string {
+  if (value > 0) return `高速が${formatMinutes(value)}短い`;
+  if (value < 0) return `一般道が${formatMinutes(Math.abs(value))}短い`;
+  return "差なし";
 }
 
-function buildTimeDifferenceCopy(value: number): DifferenceCopy {
-  if (value > 0) {
-    const duration = formatMinutes(value);
-    return {
-      sentence: `高速優先は一般道より${duration}短時間です`,
-      metricValue: `高速が${duration}短い`
-    };
-  }
-
-  if (value < 0) {
-    const duration = formatMinutes(Math.abs(value));
-    return {
-      sentence: `一般道は高速優先より${duration}短時間です`,
-      metricValue: `一般道が${duration}短い`
-    };
-  }
-
-  return {
-    sentence: "所要時間に差はありません",
-    metricValue: "差なし"
-  };
-}
-
-function buildCostDifferenceCopy(value: number | null): DifferenceCopy {
-  if (value === null) {
-    return {
-      sentence: "費用差は未確認です",
-      metricValue: "未確認"
-    };
-  }
-
-  if (value > 0) {
-    const cost = formatYen(value);
-    return {
-      sentence: `高速優先は一般道より${cost}高くなります`,
-      metricValue: `高速が${cost}高い`
-    };
-  }
-
-  if (value < 0) {
-    const cost = formatYen(Math.abs(value));
-    return {
-      sentence: `高速優先は一般道より${cost}安くなります`,
-      metricValue: `高速が${cost}安い`
-    };
-  }
-
-  return {
-    sentence: "総額に差はありません",
-    metricValue: "差なし"
-  };
-}
-
-function buildRecommendationLead(
-  recommendedLabel: "高速優先" | "一般道",
-  timeDifference: DifferenceCopy,
-  costDifference: DifferenceCopy
-) {
-  return `今回は${recommendedLabel}がおすすめです。${timeDifference.sentence}。${costDifference.sentence}。`;
+function buildCostDifferenceValue(value: number | null): string {
+  if (value === null) return "未確認";
+  if (value > 0) return `高速が${formatYen(value)}高い`;
+  if (value < 0) return `高速が${formatYen(Math.abs(value))}安い`;
+  return "差なし";
 }
 
 function ListBlock({
@@ -103,39 +49,6 @@ function ListBlock({
   );
 }
 
-function RouteOption({
-  label,
-  route,
-  recommended
-}: {
-  label: string;
-  route: CompareRoutesResult["expresswayRoute"];
-  recommended: boolean;
-}) {
-  return (
-    <article className={`route-option${recommended ? " route-option--recommended" : ""}`}>
-      <div>
-        <span>{label}</span>
-        <strong>{recommended ? "おすすめ" : "比較対象"}</strong>
-      </div>
-      <dl>
-        <div>
-          <dt>時間</dt>
-          <dd>{formatMinutes(route.durationMinutes)}</dd>
-        </div>
-        <div>
-          <dt>距離</dt>
-          <dd>{formatDistanceKm(route.distanceKm)}</dd>
-        </div>
-        <div>
-          <dt>総額</dt>
-          <dd>{formatYen(route.totalCostYen)}</dd>
-        </div>
-      </dl>
-    </article>
-  );
-}
-
 /**
  * 経路比較のおすすめ理由、判断指標、各候補の費用・時間・未確認項目をまとめて表示します。
  *
@@ -144,13 +57,8 @@ function RouteOption({
 export function RouteSummary({ result }: RouteSummaryProps) {
   const hasApiFailures = result.apiFailures.length > 0;
   const recommendedLabel = result.recommendedRoute === "expressway" ? "高速優先" : "一般道";
-  const timeDifference = buildTimeDifferenceCopy(result.comparison.timeDifferenceMinutes);
-  const costDifference = buildCostDifferenceCopy(result.comparison.costDifferenceYen);
-  const recommendationLead = buildRecommendationLead(
-    recommendedLabel,
-    timeDifference,
-    costDifference
-  );
+  const timeDifference = buildTimeDifferenceValue(result.comparison.timeDifferenceMinutes);
+  const costDifference = buildCostDifferenceValue(result.comparison.costDifferenceYen);
 
   return (
     <div className="summary-stack">
@@ -163,40 +71,22 @@ export function RouteSummary({ result }: RouteSummaryProps) {
               {recommendedLabel}で進むのが良さそうです
             </span>
           </h2>
-          <p className="recommendation-band__lead">{recommendationLead}</p>
           <span className="recommendation-band__reason">{result.recommendationReason}</span>
         </div>
         <div className="recommendation-band__metrics" aria-label="判断の要点">
           <div>
-            <span>おすすめ</span>
-            <strong>{recommendedLabel}</strong>
-          </div>
-          <div>
             <span>時間差</span>
             <strong className="recommendation-band__metric-value recommendation-band__metric-value--directional">
-              {timeDifference.metricValue}
+              {timeDifference}
             </strong>
           </div>
           <div>
             <span>費用差</span>
             <strong className="recommendation-band__metric-value recommendation-band__metric-value--directional">
-              {costDifference.metricValue}
+              {costDifference}
             </strong>
           </div>
         </div>
-      </section>
-
-      <section className="route-option-grid" aria-label="ルート比較">
-        <RouteOption
-          label="高速優先"
-          route={result.expresswayRoute}
-          recommended={result.recommendedRoute === "expressway"}
-        />
-        <RouteOption
-          label="一般道"
-          route={result.localRoute}
-          recommended={result.recommendedRoute === "local"}
-        />
       </section>
 
       {hasApiFailures ? (

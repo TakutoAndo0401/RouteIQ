@@ -131,7 +131,7 @@ function parseToll(route: GoogleRoute, routeType: RouteType): {
         tollYen: null,
         confidence: "unavailable",
         fallbackMessage:
-          "Google Routes API は高速優先ルートの有料道路料金情報を返しませんでした。料金を0円とは扱わず未確定にしています。"
+          "高速優先ルートの有料道路料金を取得できなかったため、0円とせず未確認としています。"
       };
     }
     return { tollYen: 0, confidence: "api" };
@@ -143,7 +143,7 @@ function parseToll(route: GoogleRoute, routeType: RouteType): {
       tollYen: null,
       confidence: "unavailable",
       fallbackMessage:
-        "Google Routes API は有料道路の存在を示しましたが、推定料金は返しませんでした。"
+        "有料道路の推定料金を取得できなかったため、未確認としています。"
     };
   }
 
@@ -156,7 +156,7 @@ function parseToll(route: GoogleRoute, routeType: RouteType): {
     tollYen: null,
     confidence: "unavailable",
     fallbackMessage:
-      "Google Routes API は料金を返しましたが、JPY の推定料金ではありませんでした。",
+      "円建ての有料道路料金を取得できなかったため、未確認としています。",
     warning: "JPY 以外の toll estimate は RouteIQ の円建て比較に含めていません。"
   };
 }

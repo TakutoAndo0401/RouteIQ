@@ -82,7 +82,6 @@ export const TollUnavailable: Story = {
     result: resultWithUnavailableToll
   },
   play: async ({ canvas }) => {
-    await expect(canvas.getByText(/費用差は未確認です。/)).toBeVisible();
     await expect(canvas.queryByText(/未確認余計/)).not.toBeInTheDocument();
 
     const costDifferenceMetric = canvas.getByText("費用差").parentElement;
@@ -100,12 +99,6 @@ export const NegativeDifferences: Story = {
     result: negativeDifferencesResult
   },
   play: async ({ canvas }) => {
-    await expect(
-      canvas.getByText(
-        "今回は高速優先がおすすめです。一般道は高速優先より15分短時間です。高速優先は一般道より300円安くなります。"
-      )
-    ).toBeVisible();
-
     await expect(canvas.getByText("時間差").parentElement).toHaveTextContent(
       /時間差\s*一般道が15分短い/
     );

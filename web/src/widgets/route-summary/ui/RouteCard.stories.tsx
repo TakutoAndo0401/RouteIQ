@@ -69,8 +69,5 @@ export const TollUnavailable: Story = {
       "metric--warn"
     );
     await expect(canvas.getAllByText("未確認")).toHaveLength(2);
-    await expect(
-      canvas.getByText("有料道路料金を取得できなかったため、総額は未確認です。")
-    ).toBeVisible();
   }
 };
