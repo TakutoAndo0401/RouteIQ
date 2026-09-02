@@ -212,11 +212,13 @@ export function RouteSummary({ result }: RouteSummaryProps) {
           routeType="expressway"
           route={result.expresswayRoute}
           recommended={result.recommendedRoute === "expressway"}
+          vehicleType={result.input.vehicleType}
         />
         <RouteCard
           routeType="local"
           route={result.localRoute}
           recommended={result.recommendedRoute === "local"}
+          vehicleType={result.input.vehicleType}
         />
       </div>
     </div>

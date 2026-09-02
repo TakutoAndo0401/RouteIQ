@@ -556,6 +556,9 @@ export function RouteForm({
                   </label>
                 ))}
               </div>
+              <p className="vehicle-type-group__note">
+                有料道路料金は普通車基準で取得します。他の車両を選んだ場合、結果には普通車基準である旨を表示します。
+              </p>
             </fieldset>
             <div
               className={`fuel-average-panel fuel-average-panel--${fuelPriceState}`}

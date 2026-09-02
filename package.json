@@ -26,11 +26,11 @@
   "devDependencies": {
     "@chainlift/liftkit": "^0.2.0",
     "@eslint/js": "^10.0.1",
-    "@types/node": "^26.0.1",
-    "eslint": "^10.5.0",
+    "@types/node": "^26.4.0",
+    "eslint": "^10.9.1",
     "rulesync": "14.0.1",
     "typescript": "^6.0.3",
-    "typescript-eslint": "^8.62.0",
-    "vitest": "^4.1.9"
+    "typescript-eslint": "^8.69.0",
+    "vitest": "^4.1.11"
   }
 }

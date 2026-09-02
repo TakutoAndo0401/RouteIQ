@@ -74,3 +74,37 @@ export const TollUnavailable: Story = {
     ).toBeVisible();
   }
 };
+
+export const HeavyVehicleTollBasis: Story = {
+  args: {
+    vehicleType: "大型車"
+  },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          "経路プロバイダの有料道路料金は普通車基準です。他の車両区分が選ばれた場合、料金をそのまま提示せず前提を明示します。"
+      }
+    }
+  },
+  play: async ({ canvas }) => {
+    await expect(canvas.getByText("有料道路料金（普通車基準）").closest(".metric")).toHaveClass(
+      "metric--warn"
+    );
+    await expect(
+      canvas.getByText("有料道路料金と総額は普通車基準です。大型車の実際の料金は異なります。")
+    ).toBeVisible();
+  }
+};
+
+export const StandardVehicleHasNoTollNotice: Story = {
+  args: {
+    vehicleType: "普通車"
+  },
+  play: async ({ canvas }) => {
+    await expect(canvas.getByText("有料道路料金").closest(".metric")).toHaveClass(
+      "metric--neutral"
+    );
+    await expect(canvas.queryByText(/普通車基準です/)).toBeNull();
+  }
+};

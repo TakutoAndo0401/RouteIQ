@@ -124,7 +124,7 @@ export const DarkComparisonResult: Story = {
   }
 };
 
-export const RefreshFailureHidesPreviousResult: Story = {
+export const RefreshFailureKeepsPreviousResult: Story = {
   loaders: [
     () => {
       refreshRequestCount = 0;
@@ -156,15 +156,42 @@ export const RefreshFailureHidesPreviousResult: Story = {
     await userEvent.click(canvas.getByRole("button", { name: "比較" }));
     await expect(canvas.getByRole("status")).toHaveTextContent("道路状況を確認しています。");
     await expect(
-      canvas.queryByRole("heading", { name: /高速優先で進むのが良さそうです/ })
-    ).toBeNull();
+      canvas.getByRole("heading", { name: /高速優先で進むのが良さそうです/ })
+    ).toBeVisible();
 
     await expect(canvas.findByRole("alert")).resolves.toHaveTextContent(
-      "道路状況の再確認に失敗しました。"
+      "サーバー側で処理を完了できませんでした。"
     );
     await expect(
-      canvas.queryByRole("heading", { name: /高速優先で進むのが良さそうです/ })
-    ).toBeNull();
+      canvas.getByRole("heading", { name: /高速優先で進むのが良さそうです/ })
+    ).toBeVisible();
+  }
+};
+
+export const StaleAfterEditingConditions: Story = {
+  parameters: {
+    msw: {
+      handlers: {
+        routeAnalysis: http.post("/api/route-analysis", () => Response.json(successfulAnalysis))
+      }
+    }
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = await submitDefaultRoute(canvasElement);
+    await expect(
+      canvas.findByRole("heading", { name: /高速優先で進むのが良さそうです/ })
+    ).resolves.toBeTruthy();
+
+    await userEvent.type(canvas.getByLabelText("目的地"), "駅");
+
+    await expect(
+      canvas.getByRole("heading", { name: /高速優先で進むのが良さそうです/ })
+    ).toBeVisible();
+    await expect(
+      canvas.getByText(
+        "条件を変更しました。下の結果は変更前のものです。再比較すると更新します。"
+      )
+    ).toBeVisible();
   }
 };
 
@@ -198,7 +225,7 @@ export const RequestError: Story = {
     msw: {
       handlers: {
         routeAnalysis: http.post("/api/route-analysis", () =>
-          Response.json({ error: "道路状況の確認に失敗しました。" }, { status: 503 })
+          Response.json({ error: "Route analysis failed." }, { status: 503 })
         )
       }
     }
@@ -208,11 +235,64 @@ export const RequestError: Story = {
     const alert = await canvas.findByRole("alert");
     const resultRegion = canvas.getByRole("region", { name: "道路状況の確認結果" });
 
-    await expect(alert).toHaveTextContent("道路状況の確認に失敗しました。");
+    await expect(alert).toHaveTextContent("サーバー側で処理を完了できませんでした。");
+    await expect(alert).toHaveTextContent("時間をおいて再試行してください。");
+    await expect(within(alert).getByRole("button", { name: "再試行" })).toBeVisible();
     await expect(resultRegion).toHaveAttribute("aria-busy", "false");
     await expect(
       canvas.queryByRole("heading", { name: "比較結果はここに表示されます" })
     ).toBeNull();
+  }
+};
+
+export const RateLimitError: Story = {
+  parameters: {
+    msw: {
+      handlers: {
+        routeAnalysis: http.post("/api/route-analysis", () =>
+          Response.json(
+            { error: "Too many route analysis requests. Please retry later." },
+            { status: 429 }
+          )
+        )
+      }
+    }
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = await submitDefaultRoute(canvasElement);
+    const alert = await canvas.findByRole("alert");
+
+    await expect(alert).toHaveTextContent("リクエストが集中しています。");
+    await expect(alert).not.toHaveTextContent("Too many route analysis requests");
+
+    await userEvent.click(within(alert).getByText("確認メモを表示"));
+    await expect(
+      within(alert).getByText(/Too many route analysis requests/)
+    ).toBeVisible();
+  }
+};
+
+export const UnparsableErrorResponse: Story = {
+  parameters: {
+    msw: {
+      handlers: {
+        routeAnalysis: http.post(
+          "/api/route-analysis",
+          () =>
+            new Response("<!DOCTYPE html><html><body>502 Bad Gateway</body></html>", {
+              status: 502,
+              headers: { "Content-Type": "text/html" }
+            })
+        )
+      }
+    }
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = await submitDefaultRoute(canvasElement);
+    const alert = await canvas.findByRole("alert");
+
+    await expect(alert).toHaveTextContent("サーバー側で処理を完了できませんでした。");
+    await expect(alert).not.toHaveTextContent("Unexpected token");
   }
 };
 

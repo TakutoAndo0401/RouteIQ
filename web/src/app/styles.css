@@ -1722,14 +1722,14 @@ select:disabled {
   justify-self: start;
   min-height: 52px;
   padding: 0 var(--routeiq-space-sm);
-  color: var(--lk-onwarningcontainer, #271900);
+  color: var(--lk-onprimarycontainer, #001a41);
   background:
-    linear-gradient(90deg, var(--lk-warningcontainer, #ffdea9), color-mix(in srgb, var(--lk-warningcontainer, #ffdea9) 82%, #ffffff));
-  border: 1px solid color-mix(in srgb, var(--routeiq-warning) 20%, #ffffff);
+    linear-gradient(90deg, var(--routeiq-primary-soft), color-mix(in srgb, var(--routeiq-primary-soft) 82%, #ffffff));
+  border: 1px solid color-mix(in srgb, var(--routeiq-primary) 20%, #ffffff);
   border-radius: var(--routeiq-radius-md);
   font-size: 0.92rem;
   font-weight: 800;
-  box-shadow: 0 4px 12px color-mix(in srgb, var(--routeiq-warning) 12%, transparent);
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--routeiq-primary) 12%, transparent);
   animation: routeiq-panel-in 220ms ease-out both;
 }
 
@@ -2032,12 +2032,121 @@ select:disabled {
 }
 
 .error-banner {
+  display: grid;
+  gap: var(--routeiq-space-2xs);
   margin-bottom: var(--routeiq-space-xs);
   color: var(--lk-onerrorcontainer, #400012);
   background: var(--lk-errorcontainer, #ffd9dc);
   border: 0;
   border-radius: var(--routeiq-radius-md);
   font-weight: 700;
+}
+
+.error-banner__message {
+  margin: 0;
+  font-size: 1.04rem;
+  font-weight: 800;
+  text-wrap: balance;
+}
+
+.error-banner__recovery {
+  margin: 0;
+  font-weight: 500;
+  line-height: 1.6;
+  text-wrap: pretty;
+}
+
+.error-banner__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--routeiq-space-2xs);
+  margin-top: var(--routeiq-space-2xs);
+}
+
+.error-banner__actions button {
+  min-height: 44px;
+  padding: 0 var(--routeiq-space-sm);
+  color: var(--lk-onerrorcontainer, #400012);
+  background: color-mix(in srgb, var(--lk-errorcontainer, #ffd9dc) 40%, #ffffff);
+  border: 1px solid color-mix(in srgb, var(--routeiq-error) 26%, transparent);
+  border-radius: 999px;
+  cursor: pointer;
+  font-size: 0.92rem;
+  font-weight: 700;
+  transition:
+    background-color 140ms ease,
+    transform 140ms ease;
+}
+
+.error-banner__actions button:first-child {
+  color: var(--lk-onerror, #ffffff);
+  background: var(--routeiq-error);
+  border-color: transparent;
+}
+
+.error-banner__actions button:hover {
+  transform: translateY(-1px);
+}
+
+.error-banner__details {
+  margin-top: var(--routeiq-space-2xs);
+  font-weight: 500;
+}
+
+.error-banner__details summary {
+  cursor: pointer;
+  font-size: 0.88rem;
+  font-weight: 700;
+}
+
+.error-banner__details p {
+  margin: var(--routeiq-space-2xs) 0 0;
+  overflow-wrap: anywhere;
+  font-size: 0.84rem;
+  line-height: 1.6;
+}
+
+.result-stale-notice {
+  display: flex;
+  align-items: center;
+  align-self: start;
+  justify-self: start;
+  gap: var(--routeiq-space-2xs);
+  margin: 0;
+  min-height: 44px;
+  padding: 0 var(--routeiq-space-sm);
+  color: var(--lk-onwarningcontainer, #271900);
+  background: var(--lk-warningcontainer, #ffdea9);
+  border: 1px solid color-mix(in srgb, var(--routeiq-warning) 20%, #ffffff);
+  border-radius: var(--routeiq-radius-md);
+  font-size: 0.9rem;
+  font-weight: 700;
+  text-wrap: pretty;
+}
+
+.result-dashboard--stale {
+  /* .result-dashboard の routeiq-panel-in は fill-mode: both のため、
+     アニメーションを解除しないと宣言した opacity が適用されません。 */
+  animation: none;
+  opacity: 0.58;
+  filter: saturate(0.72);
+  transition:
+    opacity 180ms ease-out,
+    filter 180ms ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .result-dashboard--stale {
+    transition: none;
+  }
+}
+
+.vehicle-type-group__note {
+  margin: var(--routeiq-space-2xs) 0 0;
+  color: var(--routeiq-muted);
+  font-size: 0.82rem;
+  line-height: 1.55;
+  text-wrap: pretty;
 }
 
 .summary-stack {

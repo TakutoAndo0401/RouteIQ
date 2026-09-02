@@ -389,10 +389,11 @@ function RouteHistoryPanel({
  * @summary RouteIQの経路比較ワークフローを構成するページ
  */
 export function RouteComparisonPage({ isDarkMode, onToggleTheme }: RouteComparisonPageProps) {
-  const { analysis, busy, error, reset, submit } = useRouteAnalysis();
+  const { analysis, busy, error, markStale, stale, submit } = useRouteAnalysis();
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isCompactHistory, setIsCompactHistory] = useState(isMobileView);
   const [selectedFormDraft, setSelectedFormDraft] = useState<RouteAnalysisRequest | null>(null);
+  const [lastSubmittedInput, setLastSubmittedInput] = useState<RouteAnalysisRequest | null>(null);
   const [formFocusRequest, setFormFocusRequest] = useState<FormFocusRequest | null>(null);
   const [formMapPickerRequest, setFormMapPickerRequest] = useState<FormMapPickerRequest | null>(
     null
@@ -404,6 +405,9 @@ export function RouteComparisonPage({ isDarkMode, onToggleTheme }: RouteComparis
   const focusResultAfterSubmit = useRef(false);
   const isResizingMap = useRef(false);
   const formRequestToken = useRef(0);
+
+  /** 前回の結果を残したまま「いまの入力とは一致していない」ことを示すか。 */
+  const isResultStale = analysis !== null && (stale || busy);
 
   useEffect(() => {
     const mediaQuery = window.matchMedia(MOBILE_VIEW_QUERY);
@@ -439,6 +443,7 @@ export function RouteComparisonPage({ isDarkMode, onToggleTheme }: RouteComparis
 
   const handleSubmit = useCallback(
     async (input: RouteAnalysisRequest) => {
+      setLastSubmittedInput({ ...input });
       const result = await submit(input);
       if (!result) return;
 
@@ -468,8 +473,8 @@ export function RouteComparisonPage({ isDarkMode, onToggleTheme }: RouteComparis
 
   const restoreHistory = useCallback((input: RouteAnalysisRequest) => {
     setSelectedFormDraft({ ...input });
-    reset();
-  }, [reset]);
+    markStale();
+  }, [markStale]);
 
   const clearFormFocusRequest = useCallback(() => {
     setFormFocusRequest(null);
@@ -591,7 +596,7 @@ export function RouteComparisonPage({ isDarkMode, onToggleTheme }: RouteComparis
               focusRequest={formFocusRequest}
               initialValues={selectedFormDraft}
               mapPickerRequest={formMapPickerRequest}
-              onDraftChange={reset}
+              onDraftChange={markStale}
               onFocusRequestConsumed={clearFormFocusRequest}
               onMapPickerRequestConsumed={clearFormMapPickerRequest}
               onSubmit={handleSubmit}
@@ -610,9 +615,13 @@ export function RouteComparisonPage({ isDarkMode, onToggleTheme }: RouteComparis
         <span className="visually-hidden" role="status" aria-live="polite">
           {busy
             ? "道路状況を確認しています。"
-            : !error && analysis
-              ? "経路比較結果を更新しました。"
-              : ""}
+            : error
+              ? `${error.message}${error.recovery}`
+              : stale && analysis
+                ? "条件を変更しました。再比較すると結果を更新します。"
+                : analysis
+                  ? "経路比較結果を更新しました。"
+                  : ""}
         </span>
 
         <section
@@ -627,19 +636,51 @@ export function RouteComparisonPage({ isDarkMode, onToggleTheme }: RouteComparis
               <span aria-hidden="true">
                 <LoadingSpinner label="道路状況を確認中" />
               </span>
-              <span>道路状況を確認しています</span>
+              <span>{analysis ? "最新の条件で再比較しています" : "道路状況を確認しています"}</span>
             </div>
           ) : null}
           {error ? (
             <div className="error-banner" role="alert">
-              {error}
+              <p className="error-banner__message">{error.message}</p>
+              <p className="error-banner__recovery">{error.recovery}</p>
+              {lastSubmittedInput ? (
+                <div className="error-banner__actions" aria-label="次の操作">
+                  {error.retryable ? (
+                    <button
+                      type="button"
+                      onClick={() => void retryAnalysis(lastSubmittedInput)}
+                    >
+                      再試行
+                    </button>
+                  ) : null}
+                  <button type="button" onClick={() => editAsAddress(lastSubmittedInput)}>
+                    住所で入力し直す
+                  </button>
+                  <button type="button" onClick={() => pickOnMap(lastSubmittedInput)}>
+                    地図で選ぶ
+                  </button>
+                </div>
+              ) : null}
+              {error.detail ? (
+                <details className="error-banner__details">
+                  <summary>確認メモを表示</summary>
+                  <p>{error.detail}</p>
+                </details>
+              ) : null}
             </div>
           ) : null}
-          {!busy && !error && analysis ? (
+          {analysis && isResultStale && !busy ? (
+            <p className="result-stale-notice">
+              条件を変更しました。下の結果は変更前のものです。再比較すると更新します。
+            </p>
+          ) : null}
+          {analysis ? (
             analysis.routeComparison ? (
               <div
                 ref={dashboardRef}
-                className="result-dashboard result-dashboard--comparison"
+                className={`result-dashboard result-dashboard--comparison${
+                  isResultStale ? " result-dashboard--stale" : ""
+                }`}
                 style={{ "--routeiq-map-column": `${mapWidthPercent}%` } as CSSProperties}
               >
                 <RouteSummary result={analysis.routeComparison} />
@@ -663,7 +704,11 @@ export function RouteComparisonPage({ isDarkMode, onToggleTheme }: RouteComparis
                 <GoogleRouteMap input={analysis.input} />
               </div>
             ) : (
-              <div className="result-dashboard result-dashboard--fallback">
+              <div
+                className={`result-dashboard result-dashboard--fallback${
+                  isResultStale ? " result-dashboard--stale" : ""
+                }`}
+              >
                 {analysis.apiFailures.length > 0 ? (
                   <AnalysisFailureState
                     input={analysis.input}

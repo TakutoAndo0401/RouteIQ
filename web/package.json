@@ -16,11 +16,11 @@
     "@csstools/normalize.css": "^12.1.1",
     "@material/material-color-utilities": "^0.4.0",
     "@routeiq/contracts": "workspace:*",
-    "@vitejs/plugin-react": "^6.0.3",
-    "lucide-react": "^1.21.0",
-    "react": "^19.2.7",
-    "react-dom": "^19.2.7",
-    "vite": "^8.1.0",
+    "@vitejs/plugin-react": "^6.1.1",
+    "lucide-react": "^1.38.0",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "vite": "^8.2.2",
     "vite-plugin-singlefile": "^2.3.3"
   },
   "devDependencies": {
@@ -28,8 +28,8 @@
     "@storybook/addon-docs": "10.5.0",
     "@storybook/addon-mcp": "0.7.0",
     "@storybook/react-vite": "10.5.0",
-    "@types/react": "^19.2.17",
-    "@types/react-dom": "^19.2.3",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.5",
     "msw": "2.15.0",
     "msw-storybook-addon": "2.0.7",
     "storybook": "10.5.0"
