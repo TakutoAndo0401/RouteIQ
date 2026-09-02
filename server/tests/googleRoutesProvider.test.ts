@@ -67,7 +67,7 @@ describe("GoogleRoutesProvider", () => {
 
       expect(route.tollYen).toBeNull();
       expect(route.tollConfidence).toBe("unavailable");
-      expect(route.tollFallbackMessage).toContain("0円とは扱わず");
+      expect(route.tollFallbackMessage).toContain("0円とせず");
       expect(route.routePolyline).toHaveLength(3);
     } finally {
       globalThis.fetch = originalFetch;
